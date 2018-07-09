@@ -31,6 +31,7 @@ import org.glassfish.grizzly.thrift.client.pool.ObjectPool;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TransferQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -105,9 +106,16 @@ public class ThriftClientFilter<T extends TServiceClient> extends BaseFilter {
     public NextAction handleClose(FilterChainContext ctx) throws IOException {
         final Connection<SocketAddress> connection = ctx.getConnection();
         if (connection != null) {
+            boolean hasWaitingConsumer = false;
+            final TransferQueue<Buffer> inputBuffersQueue =
+                    (TransferQueue<Buffer>) inputBuffersQueueAttribute.remove(connection);
+            if (inputBuffersQueue != null) {
+                hasWaitingConsumer = inputBuffersQueue.tryTransfer(POISON);
+            }
+
             final ObjectPool<SocketAddress, T> connectionPool = connectionPoolAttribute.remove(connection);
             final T client = connectionClientAttribute.remove(connection);
-            if (connectionPool != null && client != null) {
+            if (connectionPool != null && client != null && !hasWaitingConsumer) {
                 try {
                     connectionPool.removeObject(connection.getPeerAddress(), client);
                     if (logger.isLoggable(Level.FINE)) {
@@ -115,10 +123,6 @@ public class ThriftClientFilter<T extends TServiceClient> extends BaseFilter {
                     }
                 } catch (Exception ignore) {
                 }
-            }
-            final BlockingQueue<Buffer> inputBuffersQueue = inputBuffersQueueAttribute.remove(connection);
-            if (inputBuffersQueue != null) {
-                inputBuffersQueue.offer(POISON);
             }
         }
         return ctx.getInvokeAction();
