@@ -29,11 +29,11 @@ import org.glassfish.grizzly.ConnectorHandler;
 import org.glassfish.grizzly.Grizzly;
 import org.glassfish.grizzly.Processor;
 import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.attributes.AttributeHolder;
 import org.glassfish.grizzly.filterchain.FilterChain;
 import org.glassfish.grizzly.filterchain.FilterChainBuilder;
 import org.glassfish.grizzly.filterchain.TransportFilter;
 import org.glassfish.grizzly.http.HttpClientFilter;
+import org.glassfish.grizzly.http.util.Header;
 import org.glassfish.grizzly.thrift.TGrizzlyClientTransport;
 import org.glassfish.grizzly.thrift.TTimedoutException;
 import org.glassfish.grizzly.thrift.ThriftClientFilter;
@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
 import java.net.SocketAddress;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -165,6 +166,7 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
     private final TransferProtocols transferProtocol;
     private final int maxThriftFrameLength;
     private final String httpUriPath;
+    private Map<String, String> httpHeaders;
     private final Processor processor;
 
     private GrizzlyThriftClient(Builder<T> builder) {
@@ -182,10 +184,12 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         this.maxThriftFrameLength = builder.maxThriftFrameLength;
         this.transferProtocol = builder.transferProtocol;
         this.httpUriPath = builder.httpUriPath;
+        this.httpHeaders = builder.httpHeaders;
+
         final FilterChainBuilder clientFilterChainBuilder = FilterChainBuilder.stateless();
         switch (transferProtocol) {
             case HTTP:
-                clientFilterChainBuilder.add(new TransportFilter()).add(new HttpClientFilter()).add(new ThriftHttpClientFilter(httpUriPath)).add(new ThriftClientFilter());
+                clientFilterChainBuilder.add(new TransportFilter()).add(new HttpClientFilter()).add(new ThriftHttpClientFilter(httpUriPath, httpHeaders)).add(new ThriftClientFilter());
                 break;
             case BASIC:
             default:
@@ -830,7 +834,9 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
 
         private final ZKClient zkClient;
         private int maxThriftFrameLength;
+
         private String httpUriPath = "/";
+        private Map<String, String> httpHeaders;
 
         public Builder(final String thriftClientName, final GrizzlyThriftClientManager manager, final TCPNIOTransport transport, final TServiceClientFactory<T> clientFactory) {
             this.thriftClientName = thriftClientName;
@@ -1067,6 +1073,18 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             }
             this.transferProtocol = TransferProtocols.HTTP;
             this.httpUriPath = httpUriPath;
+            return this;
+        }
+
+        public Builder<T> httpHeader(final Header header, final String value) {
+            return httpHeader(header.toString(), value);
+        }
+
+        public Builder<T> httpHeader(final String name, final String value) {
+            if (httpHeaders == null) {
+                httpHeaders = new HashMap<>();
+            }
+            httpHeaders.put(name, value);
             return this;
         }
 

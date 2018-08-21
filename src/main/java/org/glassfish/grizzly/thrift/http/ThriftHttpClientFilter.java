@@ -28,6 +28,9 @@ import org.glassfish.grizzly.http.util.Header;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * ThriftHttpClientFilter is a client-side filter for Thrift RPC processors over HTTP.
@@ -64,9 +67,22 @@ public class ThriftHttpClientFilter extends HttpBaseFilter {
     private static final String THRIFT_HTTP_CONTENT_TYPE = "application/x-thrift";
 
     private final String uriPath;
+    private final Map<String, String> headers = new HashMap<>();
+
+    public ThriftHttpClientFilter(final String uriPath, Map<String, String> headers) {
+        this.uriPath = uriPath;
+
+        this.headers.put(Header.Connection.toString(), "keep-alive");
+        this.headers.put(Header.Accept.toString(), "*/*");
+        this.headers.put(Header.UserAgent.toString(), "grizzly-thrift");
+
+        if (headers != null && !headers.isEmpty()) {
+            this.headers.putAll(headers);
+        }
+    }
 
     public ThriftHttpClientFilter(final String uriPath) {
-        this.uriPath = uriPath;
+        this(uriPath, null);
     }
 
     @Override
@@ -101,9 +117,9 @@ public class ThriftHttpClientFilter extends HttpBaseFilter {
             builder.chunked(true);
         }
         builder.contentType(THRIFT_HTTP_CONTENT_TYPE);
-        builder.header(Header.Connection, "keep-alive");
-        builder.header(Header.Accept, "*/*");
-        builder.header(Header.UserAgent, "grizzly-thrift");
+        for (Entry<String, String> entry : headers.entrySet()) {
+            builder.header(entry.getKey(), entry.getValue());
+        }
         final HttpRequestPacket requestPacket = builder.build();
 
         final HttpContent content = requestPacket.httpContentBuilder().content(requestBodyBuffer).build();
