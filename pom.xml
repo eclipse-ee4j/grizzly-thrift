@@ -71,7 +71,7 @@
     <properties>
         <grizzly-framework-version>2.4.4</grizzly-framework-version>
         <zookeeper-version>3.5.5</zookeeper-version>
-        <libthrift-version>0.12.0</libthrift-version>
+        <libthrift-version>0.14.0</libthrift-version>
         <jdk.compile.version>1.8</jdk.compile.version>
         <maven.compiler.argument>
             -Xlint:unchecked,deprecation,fallthrough,finally,cast,dep-ann,empty,overrides
