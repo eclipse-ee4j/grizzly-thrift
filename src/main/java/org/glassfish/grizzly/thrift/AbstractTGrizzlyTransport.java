@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2017 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022 Oracle and/or its affiliates. All rights reserved.
  *
  * This program and the accompanying materials are made available under the
  * terms of the Eclipse Public License v. 2.0, which is available at
@@ -16,6 +16,7 @@
 
 package org.glassfish.grizzly.thrift;
 
+import org.apache.thrift.TConfiguration;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.glassfish.grizzly.Buffer;
@@ -58,6 +59,21 @@ public abstract class AbstractTGrizzlyTransport extends TTransport {
 
     @Override
     public abstract void flush() throws TTransportException;
+
+    @Override
+    public TConfiguration getConfiguration() {
+        return null;
+    }
+
+    @Override
+    public void updateKnownMessageSize(long l) throws TTransportException {
+
+    }
+
+    @Override
+    public void checkReadBytesAvailable(long l) throws TTransportException {
+
+    }
 
     protected abstract Buffer getInputBuffer() throws TTransportException;
 
