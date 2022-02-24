@@ -27,7 +27,7 @@
     <groupId>org.glassfish.grizzly</groupId>
     <artifactId>grizzly-thrift</artifactId>
     <packaging>bundle</packaging>
-    <version>1.3.16-SNAPSHOT</version>
+    <version>1.3.16</version>
     <name>grizzly-thrift</name>
     <url>http://projects.eclipse.org/projects/ee4j.grizzly</url>
     <issueManagement>
