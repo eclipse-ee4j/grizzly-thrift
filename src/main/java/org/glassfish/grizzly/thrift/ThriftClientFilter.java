@@ -16,6 +16,13 @@
 
 package org.glassfish.grizzly.thrift;
 
+import java.io.IOException;
+import java.net.SocketAddress;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.TransferQueue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 import org.apache.thrift.TServiceClient;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
@@ -28,19 +35,14 @@ import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.thrift.client.GrizzlyThriftClient;
 import org.glassfish.grizzly.thrift.client.pool.ObjectPool;
 
-import java.io.IOException;
-import java.net.SocketAddress;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.TransferQueue;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /**
  * ThriftClientFilter is a client-side filter for Thrift RPC processors.
  * <p>
- * Read-messages will be queued in LinkedBlockingQueue from which TGrizzlyClientTransport will read it.
+ * Read-messages will be queued in LinkedBlockingQueue from which
+ * TGrizzlyClientTransport will read it.
  * <p>
  * Usages:
+ *
  * <pre>
  * {@code
  * final FilterChainBuilder clientFilterChainBuilder = FilterChainBuilder.stateless();
@@ -71,12 +73,12 @@ public class ThriftClientFilter<T extends TServiceClient> extends BaseFilter {
 
     private static final Logger logger = Grizzly.logger(ThriftClientFilter.class);
 
-    private final Attribute<ObjectPool<SocketAddress, T>> connectionPoolAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(GrizzlyThriftClient.CONNECTION_POOL_ATTRIBUTE_NAME);
-    private final Attribute<T> connectionClientAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(GrizzlyThriftClient.CLIENT_ATTRIBUTE_NAME);
-    private final Attribute<BlockingQueue<Buffer>> inputBuffersQueueAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(GrizzlyThriftClient.INPUT_BUFFERS_QUEUE_ATTRIBUTE_NAME);
+    private final Attribute<ObjectPool<SocketAddress, T>> connectionPoolAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(GrizzlyThriftClient.CONNECTION_POOL_ATTRIBUTE_NAME);
+    private final Attribute<T> connectionClientAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(GrizzlyThriftClient.CLIENT_ATTRIBUTE_NAME);
+    private final Attribute<BlockingQueue<Buffer>> inputBuffersQueueAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(GrizzlyThriftClient.INPUT_BUFFERS_QUEUE_ATTRIBUTE_NAME);
 
     static final Buffer POISON = Buffers.EMPTY_BUFFER;
 
@@ -107,8 +109,7 @@ public class ThriftClientFilter<T extends TServiceClient> extends BaseFilter {
         final Connection<SocketAddress> connection = ctx.getConnection();
         if (connection != null) {
             boolean hasWaitingConsumer = false;
-            final TransferQueue<Buffer> inputBuffersQueue =
-                    (TransferQueue<Buffer>) inputBuffersQueueAttribute.remove(connection);
+            final TransferQueue<Buffer> inputBuffersQueue = (TransferQueue<Buffer>) inputBuffersQueueAttribute.remove(connection);
             if (inputBuffersQueue != null) {
                 hasWaitingConsumer = inputBuffersQueue.tryTransfer(POISON);
             }
@@ -125,6 +126,7 @@ public class ThriftClientFilter<T extends TServiceClient> extends BaseFilter {
                 }
             }
         }
+
         return ctx.getInvokeAction();
     }
 }

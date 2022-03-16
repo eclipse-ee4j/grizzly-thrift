@@ -16,6 +16,12 @@
 
 package org.glassfish.grizzly.thrift.http;
 
+import java.io.IOException;
+import java.net.InetSocketAddress;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.filterchain.FilterChainContext;
 import org.glassfish.grizzly.filterchain.NextAction;
@@ -26,16 +32,12 @@ import org.glassfish.grizzly.http.Method;
 import org.glassfish.grizzly.http.Protocol;
 import org.glassfish.grizzly.http.util.Header;
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-
 /**
- * ThriftHttpClientFilter is a client-side filter for Thrift RPC processors over HTTP.
+ * ThriftHttpClientFilter is a client-side filter for Thrift RPC processors over
+ * HTTP.
  * <p>
  * Usages:
+ *
  * <pre>
  * {@code
  * final FilterChainBuilder clientFilterChainBuilder = FilterChainBuilder.stateless();
@@ -125,6 +127,7 @@ public class ThriftHttpClientFilter extends HttpBaseFilter {
         final HttpContent content = requestPacket.httpContentBuilder().content(requestBodyBuffer).build();
         content.setLast(true);
         ctx.setMessage(content);
+
         return ctx.getInvokeAction();
     }
 }

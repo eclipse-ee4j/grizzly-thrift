@@ -16,17 +16,18 @@
 
 package org.glassfish.grizzly.thrift;
 
+import java.io.IOException;
+
 import org.apache.thrift.TConfiguration;
 import org.apache.thrift.transport.TTransport;
 import org.apache.thrift.transport.TTransportException;
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 
-import java.io.IOException;
-
 /**
- * Abstract class for implementing thrift's TTransport.
- * By using BufferOutputStream, the output buffer will be increased automatically by given MemoryManager if it doesn't have enough spaces.
+ * Abstract class for implementing thrift's TTransport. By using
+ * BufferOutputStream, the output buffer will be increased automatically by
+ * given MemoryManager if it doesn't have enough spaces.
  *
  * @author Bongjae Chang
  */

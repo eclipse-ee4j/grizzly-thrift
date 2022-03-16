@@ -23,7 +23,8 @@ import org.glassfish.grizzly.utils.BufferOutputStream;
 /**
  * TGrizzlyServerTransport is the server-side TTransport.
  * <p>
- * Input and output buffers are already allocated by Grizzly or ThriftServerFilter.
+ * Input and output buffers are already allocated by Grizzly or
+ * ThriftServerFilter.
  *
  * @author Bongjae Chang
  */

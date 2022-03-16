@@ -16,41 +16,6 @@
 
 package org.glassfish.grizzly.thrift.client;
 
-import org.apache.thrift.TServiceClient;
-import org.apache.thrift.TServiceClientFactory;
-import org.apache.thrift.protocol.TBinaryProtocol;
-import org.apache.thrift.protocol.TCompactProtocol;
-import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.protocol.TProtocolException;
-import org.apache.thrift.transport.TTransport;
-import org.apache.thrift.transport.TTransportException;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.ConnectorHandler;
-import org.glassfish.grizzly.Grizzly;
-import org.glassfish.grizzly.Processor;
-import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.filterchain.FilterChain;
-import org.glassfish.grizzly.filterchain.FilterChainBuilder;
-import org.glassfish.grizzly.filterchain.TransportFilter;
-import org.glassfish.grizzly.http.HttpClientFilter;
-import org.glassfish.grizzly.http.util.Header;
-import org.glassfish.grizzly.thrift.TGrizzlyClientTransport;
-import org.glassfish.grizzly.thrift.TTimedoutException;
-import org.glassfish.grizzly.thrift.ThriftClientFilter;
-import org.glassfish.grizzly.thrift.ThriftFrameFilter;
-import org.glassfish.grizzly.thrift.client.pool.BaseObjectPool;
-import org.glassfish.grizzly.thrift.client.pool.NoValidObjectException;
-import org.glassfish.grizzly.thrift.client.pool.ObjectPool;
-import org.glassfish.grizzly.thrift.client.pool.PoolExhaustedException;
-import org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory;
-import org.glassfish.grizzly.thrift.client.zookeeper.BarrierListener;
-import org.glassfish.grizzly.thrift.client.zookeeper.ServerListBarrierListener;
-import org.glassfish.grizzly.thrift.client.zookeeper.ZKClient;
-import org.glassfish.grizzly.thrift.client.zookeeper.ZooKeeperSupportThriftClient;
-import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.thrift.http.ThriftHttpClientFilter;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
@@ -71,24 +36,60 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.thrift.TServiceClient;
+import org.apache.thrift.TServiceClientFactory;
+import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.protocol.TProtocolException;
+import org.apache.thrift.transport.TTransport;
+import org.apache.thrift.transport.TTransportException;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.ConnectorHandler;
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.Processor;
+import org.glassfish.grizzly.attributes.Attribute;
+import org.glassfish.grizzly.filterchain.FilterChain;
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
+import org.glassfish.grizzly.filterchain.TransportFilter;
+import org.glassfish.grizzly.http.HttpClientFilter;
+import org.glassfish.grizzly.http.util.Header;
+import org.glassfish.grizzly.nio.transport.TCPNIOConnectorHandler;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
+import org.glassfish.grizzly.thrift.TGrizzlyClientTransport;
+import org.glassfish.grizzly.thrift.TTimedoutException;
+import org.glassfish.grizzly.thrift.ThriftClientFilter;
+import org.glassfish.grizzly.thrift.ThriftFrameFilter;
+import org.glassfish.grizzly.thrift.client.pool.BaseObjectPool;
+import org.glassfish.grizzly.thrift.client.pool.NoValidObjectException;
+import org.glassfish.grizzly.thrift.client.pool.ObjectPool;
+import org.glassfish.grizzly.thrift.client.pool.PoolExhaustedException;
+import org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory;
+import org.glassfish.grizzly.thrift.client.zookeeper.BarrierListener;
+import org.glassfish.grizzly.thrift.client.zookeeper.ServerListBarrierListener;
+import org.glassfish.grizzly.thrift.client.zookeeper.ZKClient;
+import org.glassfish.grizzly.thrift.client.zookeeper.ZooKeeperSupportThriftClient;
+import org.glassfish.grizzly.thrift.http.ThriftHttpClientFilter;
+
 /**
  * The implementation of the {@link ThriftClient} based on Grizzly
  * <p>
- * Basically, this class use {@link BaseObjectPool} for pooling connections of the thrift server
- * and {@link RoundRobinStore} for selecting the thrift server.
+ * Basically, this class use {@link BaseObjectPool} for pooling connections of
+ * the thrift server and {@link RoundRobinStore} for selecting the thrift
+ * server.
  * <p>
- * When a thrift operation is called,
- * 1. finding the correct server by round-robin
- * 2. borrowing the connection from the connection pool
- * 3. returning the connection to the pool
+ * When a thrift operation is called, 1. finding the correct server by
+ * round-robin 2. borrowing the connection from the connection pool 3. returning
+ * the connection to the pool
  * <p>
- * For the failback of the thrift server, {@link HealthMonitorTask} will be scheduled by {@code healthMonitorIntervalInSecs}.
- * If connecting and writing are failed, this thrift client retries failure operations by {@code retryCount}.
- * The retrial doesn't request failed server but another thrift server.
- * And this client provides {@code failover} flag which can turn off the failover/failback.
+ * For the failback of the thrift server, {@link HealthMonitorTask} will be
+ * scheduled by {@code healthMonitorIntervalInSecs}. If connecting and writing
+ * are failed, this thrift client retries failure operations by
+ * {@code retryCount}. The retrial doesn't request failed server but another
+ * thrift server. And this client provides {@code failover} flag which can turn
+ * off the failover/failback.
  * <p>
- * Example of use:
- * {@code
+ * Example of use: {@code
  * // creates a ThriftClientManager
  * final GrizzlyThriftClientManager manager = new GrizzlyThriftClientManager.Builder().build();
  *
@@ -106,14 +107,9 @@ import java.util.logging.Logger;
  * Integer result = calculatorThriftClient.execute(new ThriftClientCallback<Calculator.Client, Integer>() {
  *
  *         public Integer call(Calculator.Client client) throws TException {
- *              return client.add(1, 2);
- *         }
- *     });
- * // ...
+ *              return client.add(1, 2); } }); // ...
  *
- * // shuts down
- * manager.shutdown();
- * }
+ * // shuts down manager.shutdown(); }
  *
  * @author Bongjae Chang
  */
@@ -132,10 +128,9 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
     public static final String CLIENT_ATTRIBUTE_NAME = "GrizzlyThriftClient.Client";
     public static final String INPUT_BUFFERS_QUEUE_ATTRIBUTE_NAME = "GrizzlyThriftClient.inputBuffersQueue";
 
-    private final Attribute<ObjectPool<SocketAddress, T>> connectionPoolAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(CONNECTION_POOL_ATTRIBUTE_NAME);
-    private final Attribute<T> clientAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(CLIENT_ATTRIBUTE_NAME);
+    private final Attribute<ObjectPool<SocketAddress, T>> connectionPoolAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(CONNECTION_POOL_ATTRIBUTE_NAME);
+    private final Attribute<T> clientAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(CLIENT_ATTRIBUTE_NAME);
 
     private final ObjectPool<SocketAddress, T> connectionPool;
 
@@ -188,23 +183,25 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
 
         final FilterChainBuilder clientFilterChainBuilder = FilterChainBuilder.stateless();
         switch (transferProtocol) {
-            case HTTP:
-                clientFilterChainBuilder.add(new TransportFilter()).add(new HttpClientFilter()).add(new ThriftHttpClientFilter(httpUriPath, httpHeaders)).add(new ThriftClientFilter());
-                break;
-            case BASIC:
-            default:
-                clientFilterChainBuilder.add(new TransportFilter()).add(new ThriftFrameFilter(maxThriftFrameLength)).add(new ThriftClientFilter());
-                break;
+        case HTTP:
+            clientFilterChainBuilder.add(new TransportFilter()).add(new HttpClientFilter())
+                    .add(new ThriftHttpClientFilter(httpUriPath, httpHeaders)).add(new ThriftClientFilter());
+            break;
+        case BASIC:
+        default:
+            clientFilterChainBuilder.add(new TransportFilter()).add(new ThriftFrameFilter(maxThriftFrameLength))
+                    .add(new ThriftClientFilter());
+            break;
         }
         this.processor = clientFilterChainBuilder.build();
 
         @SuppressWarnings("unchecked")
-        final BaseObjectPool.Builder<SocketAddress, T> connectionPoolBuilder =
-                new BaseObjectPool.Builder<SocketAddress, T>(new PoolableObjectFactory<SocketAddress, T>() {
+        final BaseObjectPool.Builder<SocketAddress, T> connectionPoolBuilder = new BaseObjectPool.Builder<SocketAddress, T>(
+                new PoolableObjectFactory<SocketAddress, T>() {
                     @Override
                     public T createObject(final SocketAddress key) throws Exception {
-                        final ConnectorHandler<SocketAddress> connectorHandler =
-                                TCPNIOConnectorHandler.builder(transport).processor(processor).setReuseAddress(true).build();
+                        final ConnectorHandler<SocketAddress> connectorHandler = TCPNIOConnectorHandler.builder(transport)
+                                .processor(processor).setReuseAddress(true).build();
                         final Future<Connection> future = connectorHandler.connect(key);
                         final Connection<SocketAddress> connection;
                         try {
@@ -249,7 +246,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
                         }
                         if (connection != null) {
                             connectionPoolAttribute.set(connection, connectionPool);
-                            final TGrizzlyClientTransport ttransport = TGrizzlyClientTransport.create(connection, responseTimeoutInMillis, writeTimeoutInMillis);
+                            final TGrizzlyClientTransport ttransport = TGrizzlyClientTransport.create(connection, responseTimeoutInMillis,
+                                    writeTimeoutInMillis);
                             final TProtocol protocol;
                             if (thriftProtocol == ThriftProtocols.BINARY) {
                                 protocol = new TBinaryProtocol(ttransport);
@@ -318,7 +316,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         if (failover && healthMonitorIntervalInSecs > 0) {
             healthMonitorTask = new HealthMonitorTask();
             scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-            scheduledFuture = scheduledExecutor.scheduleWithFixedDelay(healthMonitorTask, healthMonitorIntervalInSecs, healthMonitorIntervalInSecs, TimeUnit.SECONDS);
+            scheduledFuture = scheduledExecutor.scheduleWithFixedDelay(healthMonitorTask, healthMonitorIntervalInSecs,
+                    healthMonitorIntervalInSecs, TimeUnit.SECONDS);
         } else {
             healthMonitorTask = null;
             scheduledExecutor = null;
@@ -345,7 +344,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             roundRobinStore.shuffle();
         }
         if (zkClient != null) {
-            // need to initialize the remote server with local initalServers if the remote server data is empty?
+            // need to initialize the remote server with local initalServers if the remote
+            // server data is empty?
             // currently, do nothing
             zooKeeperServerListPath = zkClient.registerBarrier(thriftClientName, zkListener, null);
         }
@@ -424,8 +424,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             return;
         }
         if (!forcibly) {
-            if (healthMonitorTask != null && healthMonitorTask.failure(serverAddress) &&
-                !(retainLastServer && roundRobinStore.hasOnly(serverAddress))) {
+            if (healthMonitorTask != null && healthMonitorTask.failure(serverAddress)
+                    && !(retainLastServer && roundRobinStore.hasOnly(serverAddress))) {
                 roundRobinStore.remove(serverAddress);
                 if (logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO, "removed the server successfully. address={0}", serverAddress);
@@ -564,23 +564,27 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
                 client = connectionPool.borrowObject(address, connectTimeoutInMillis);
             } catch (PoolExhaustedException pee) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms", pee);
+                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms",
+                            pee);
                 }
                 continue;
             } catch (NoValidObjectException nvoe) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms", nvoe);
+                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms",
+                            nvoe);
                 }
                 removeServer(address, false);
                 continue;
             } catch (TimeoutException te) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms", te);
+                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms",
+                            te);
                 }
                 continue;
             } catch (InterruptedException ie) {
                 if (logger.isLoggable(Level.FINER)) {
-                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms", ie);
+                    logger.log(Level.FINER, "failed to get the client. address=" + address + ", timeout=" + connectTimeoutInMillis + "ms",
+                            ie);
                 }
                 throw ie;
             }
@@ -612,7 +616,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             } catch (TProtocolException tpe) {
                 systemException = true;
                 if (logger.isLoggable(logLevel)) {
-                    logger.log(logLevel, "occurred a thrift protocol error. address=" + address + ", client=" + client + ", callback" + callback, tpe);
+                    logger.log(logLevel,
+                            "occurred a thrift protocol error. address=" + address + ", client=" + client + ", callback" + callback, tpe);
                 }
                 try {
                     connectionPool.removeObject(address, client);
@@ -624,7 +629,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             } catch (TTransportException tte) {
                 systemException = true;
                 if (logger.isLoggable(logLevel)) {
-                    logger.log(logLevel, "occurred a thrift trasport error. address=" + address + ", client=" + client + ", callback" + callback, tte);
+                    logger.log(logLevel,
+                            "occurred a thrift trasport error. address=" + address + ", client=" + client + ", callback" + callback, tte);
                 }
                 try {
                     connectionPool.removeObject(address, client);
@@ -677,7 +683,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         if (connection == null) {
             return false;
         }
-        final TGrizzlyClientTransport ttransport = TGrizzlyClientTransport.create(connection, responseTimeoutInMillis, writeTimeoutInMillis);
+        final TGrizzlyClientTransport ttransport = TGrizzlyClientTransport.create(connection, responseTimeoutInMillis,
+                writeTimeoutInMillis);
         final TProtocol protocol;
         if (thriftProtocol == ThriftProtocols.BINARY) {
             protocol = new TBinaryProtocol(ttransport);
@@ -723,14 +730,17 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
                 revivals.clear();
                 final Set<SocketAddress> failuresSet = failures.keySet();
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "try to check the failures in health monitor. failed list hint={0}, interval={1}secs", new Object[]{failuresSet, healthMonitorIntervalInSecs});
+                    logger.log(Level.FINE, "try to check the failures in health monitor. failed list hint={0}, interval={1}secs",
+                            new Object[] { failuresSet, healthMonitorIntervalInSecs });
                 } else if (logger.isLoggable(Level.INFO) && !failuresSet.isEmpty()) {
-                    logger.log(Level.INFO, "try to check the failures in health monitor. failed list hint={0}, interval={1}secs", new Object[]{failuresSet, healthMonitorIntervalInSecs});
+                    logger.log(Level.INFO, "try to check the failures in health monitor. failed list hint={0}, interval={1}secs",
+                            new Object[] { failuresSet, healthMonitorIntervalInSecs });
                 }
                 for (SocketAddress failure : failuresSet) {
                     try {
                         // get the temporary connection
-                        final ConnectorHandler<SocketAddress> connectorHandler = TCPNIOConnectorHandler.builder(transport).setReuseAddress(true).build();
+                        final ConnectorHandler<SocketAddress> connectorHandler = TCPNIOConnectorHandler.builder(transport)
+                                .setReuseAddress(true).build();
                         Future<Connection> future = connectorHandler.connect(failure);
                         final Connection<SocketAddress> connection;
                         try {
@@ -786,9 +796,11 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
                 }
                 final Set<SocketAddress> revivalsSet = revivals.keySet();
                 if (logger.isLoggable(Level.FINE)) {
-                    logger.log(Level.FINE, "try to restore revivals in health monitor. revival list hint={0}, interval={1}secs", new Object[]{revivalsSet, healthMonitorIntervalInSecs});
+                    logger.log(Level.FINE, "try to restore revivals in health monitor. revival list hint={0}, interval={1}secs",
+                            new Object[] { revivalsSet, healthMonitorIntervalInSecs });
                 } else if (logger.isLoggable(Level.INFO) && !revivalsSet.isEmpty()) {
-                    logger.log(Level.INFO, "try to restore revivals in health monitor. revival list hint={0}, interval={1}secs", new Object[]{revivalsSet, healthMonitorIntervalInSecs});
+                    logger.log(Level.INFO, "try to restore revivals in health monitor. revival list hint={0}, interval={1}secs",
+                            new Object[] { revivalsSet, healthMonitorIntervalInSecs });
                 }
                 for (SocketAddress revival : revivalsSet) {
                     if (!addServer(revival, false)) {
@@ -838,7 +850,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         private String httpUriPath = "/";
         private Map<String, String> httpHeaders;
 
-        public Builder(final String thriftClientName, final GrizzlyThriftClientManager manager, final TCPNIOTransport transport, final TServiceClientFactory<T> clientFactory) {
+        public Builder(final String thriftClientName, final GrizzlyThriftClientManager manager, final TCPNIOTransport transport,
+                final TServiceClientFactory<T> clientFactory) {
             this.thriftClientName = thriftClientName;
             this.manager = manager;
             this.transport = transport;
@@ -856,7 +869,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             thriftClient.start();
             if (!manager.addThriftClient(thriftClient)) {
                 thriftClient.stop();
-                throw new IllegalStateException("failed to add the thrift client because the ThriftClientManager already stopped or the same thrift client name existed");
+                throw new IllegalStateException(
+                        "failed to add the thrift client because the ThriftClientManager already stopped or the same thrift client name existed");
             }
             return thriftClient;
         }
@@ -864,8 +878,7 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         /**
          * Set global connect-timeout
          * <p>
-         * If the given param is negative, the timeout is infite.
-         * Default is 5000.
+         * If the given param is negative, the timeout is infite. Default is 5000.
          *
          * @param connectTimeoutInMillis connect-timeout in milli-seconds
          * @return this builder
@@ -878,8 +891,7 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         /**
          * Set global write-timeout
          * <p>
-         * If the given param is negative, the timeout is infite.
-         * Default is 5000.
+         * If the given param is negative, the timeout is infite. Default is 5000.
          *
          * @param writeTimeoutInMillis write-timeout in milli-seconds
          * @return this builder
@@ -892,8 +904,7 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         /**
          * Set global response-timeout
          * <p>
-         * If the given param is negative, the timeout is infite.
-         * Default is 10000.
+         * If the given param is negative, the timeout is infite. Default is 10000.
          *
          * @param responseTimeoutInMillis response-timeout in milli-seconds
          * @return this builder
@@ -949,10 +960,10 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
          * Set health monitor's interval
          * <p>
          * This thrift client will schedule HealthMonitorTask with this interval.
-         * HealthMonitorTask will check the failure servers periodically and detect the revived server.
-         * If the given parameter is negative, this thrift client never schedules HealthMonitorTask
-         * so this behavior is similar to seting {@code failover} to be false.
-         * Default is 60.
+         * HealthMonitorTask will check the failure servers periodically and detect the
+         * revived server. If the given parameter is negative, this thrift client never
+         * schedules HealthMonitorTask so this behavior is similar to seting
+         * {@code failover} to be false. Default is 60.
          *
          * @param healthMonitorIntervalInSecs interval in seconds
          * @return this builder
@@ -967,7 +978,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
          * <p>
          * Default is false.
          *
-         * @param allowDisposableConnection true if this thrift client allows disposable connections
+         * @param allowDisposableConnection true if this thrift client allows disposable
+         * connections
          * @return this builder
          */
         public Builder<T> allowDisposableConnection(final boolean allowDisposableConnection) {
@@ -976,11 +988,13 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         }
 
         /**
-         * Enable or disable the connection validation when the connection is borrowed from the connection pool
+         * Enable or disable the connection validation when the connection is borrowed
+         * from the connection pool
          * <p>
          * Default is false.
          *
-         * @param borrowValidation true if this thrift client should make sure the borrowed connection is valid
+         * @param borrowValidation true if this thrift client should make sure the
+         * borrowed connection is valid
          * @return this builder
          */
         public Builder<T> borrowValidation(final boolean borrowValidation) {
@@ -989,11 +1003,13 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         }
 
         /**
-         * Enable or disable the connection validation when the connection is returned to the connection pool
+         * Enable or disable the connection validation when the connection is returned
+         * to the connection pool
          * <p>
          * Default is false.
          *
-         * @param returnValidation true if this thrift client should make sure the returned connection is valid
+         * @param returnValidation true if this thrift client should make sure the
+         * returned connection is valid
          * @return this builder
          */
         public Builder<T> returnValidation(final boolean returnValidation) {
@@ -1002,11 +1018,13 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
         }
 
         /**
-         * Enable or disable the keeping a server in the the round-robin list when the only one server is remained in the list.
+         * Enable or disable the keeping a server in the the round-robin list when the
+         * only one server is remained in the list.
          * <p>
          * Default is false
          *
-         * @param retainLastServer true if this thrift client should make sure the retaining one server in the round-robin list.
+         * @param retainLastServer true if this thrift client should make sure the
+         * retaining one server in the round-robin list.
          * @return this builder
          */
         public Builder<T> retainLastServer(final boolean retainLastServer) {
@@ -1030,7 +1048,8 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
          * <p>
          * Default is true.
          *
-         * @param failover true if this thrift client should support failover/failback when the server is failed or revived
+         * @param failover true if this thrift client should support failover/failback
+         * when the server is failed or revived
          * @return this builder
          */
         public Builder<T> failover(final boolean failover) {
@@ -1095,7 +1114,6 @@ public class GrizzlyThriftClient<T extends TServiceClient> implements ThriftClie
             return this;
         }
     }
-
 
     @Override
     public String toString() {

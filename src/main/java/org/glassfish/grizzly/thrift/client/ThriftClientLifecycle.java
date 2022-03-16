@@ -28,8 +28,8 @@ public interface ThriftClientLifecycle {
     public void start();
 
     /**
-     * Providers may be doing all sorts of exotic things and need to be able to clean up on
-     * stop.
+     * Providers may be doing all sorts of exotic things and need to be able to
+     * clean up on stop.
      */
     public void stop();
 }
