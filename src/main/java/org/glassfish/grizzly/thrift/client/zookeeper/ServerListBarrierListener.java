@@ -16,9 +16,6 @@
 
 package org.glassfish.grizzly.thrift.client.zookeeper;
 
-import org.glassfish.grizzly.Grizzly;
-import org.glassfish.grizzly.thrift.client.ThriftClient;
-
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -30,8 +27,12 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.thrift.client.ThriftClient;
+
 /**
- * The {@link BarrierListener} implementation for synchronizing the thrift server list among all clients which have joined the same zookeeper server
+ * The {@link BarrierListener} implementation for synchronizing the thrift
+ * server list among all clients which have joined the same zookeeper server
  *
  * @author Bongjae Chang
  */
@@ -62,7 +63,8 @@ public class ServerListBarrierListener implements BarrierListener {
         if (remoteBytes == null || remoteBytes.length == 0) {
             return;
         }
-        // check the remote thrift server list of the zookeeper server is equal to local if the server has pre-defined server list
+        // check the remote thrift server list of the zookeeper server is equal to local
+        // if the server has pre-defined server list
         try {
             final String remoteServerList = new String(remoteBytes, DEFAULT_SERVER_LIST_CHARSET);
             final Set<SocketAddress> remoteServers = getAddressesFromStringList(remoteServerList);
@@ -80,16 +82,18 @@ public class ServerListBarrierListener implements BarrierListener {
                 if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING,
                             "failed to check the thrift server list from the remote. thriftClientName={0}, local={1}, remote={2}",
-                            new Object[]{thriftClientName, localServerSet, remoteServers});
+                            new Object[] { thriftClientName, localServerSet, remoteServers });
                 }
             } else {
                 if (logger.isLoggable(Level.INFO)) {
-                    logger.log(Level.INFO, "thrift server list confirmed. thriftClientName={0}, list=[{1}]", new Object[]{thriftClientName, remoteServerList});
+                    logger.log(Level.INFO, "thrift server list confirmed. thriftClientName={0}, list=[{1}]",
+                            new Object[] { thriftClientName, remoteServerList });
                 }
             }
         } catch (UnsupportedEncodingException uee) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "failed to check the thrift server list from the remote. thriftClientName=" + thriftClientName, uee);
+                logger.log(Level.WARNING, "failed to check the thrift server list from the remote. thriftClientName=" + thriftClientName,
+                        uee);
             }
         } finally {
             for (final BarrierListener listener : customListenerList) {
@@ -97,7 +101,8 @@ public class ServerListBarrierListener implements BarrierListener {
                     listener.onInit(regionName, path, remoteBytes);
                 } catch (Exception e) {
                     if (logger.isLoggable(Level.WARNING)) {
-                        logger.log(Level.WARNING, "failed to call onInit(). thriftClientName=" + thriftClientName + ", listener=" + listener, e);
+                        logger.log(Level.WARNING,
+                                "failed to call onInit(). thriftClientName=" + thriftClientName + ", listener=" + listener, e);
                     }
                 }
             }
@@ -108,7 +113,8 @@ public class ServerListBarrierListener implements BarrierListener {
     public void onCommit(final String regionName, final String path, byte[] remoteBytes) {
         if (remoteBytes == null || remoteBytes.length == 0) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "remote bytes is null or NO_DATA(byte[0]). regionName={0}, path={1}", new Object[]{regionName, path});
+                logger.log(Level.WARNING, "remote bytes is null or NO_DATA(byte[0]). regionName={0}, path={1}",
+                        new Object[] { regionName, path });
             }
             return;
         }
@@ -138,9 +144,8 @@ public class ServerListBarrierListener implements BarrierListener {
             }
         } catch (UnsupportedEncodingException uee) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING,
-                        "failed to apply the changed server list of the remote zookeeper server. regionName=" + regionName + ", path=" + path,
-                        uee);
+                logger.log(Level.WARNING, "failed to apply the changed server list of the remote zookeeper server. regionName=" + regionName
+                        + ", path=" + path, uee);
             }
         } finally {
             for (final BarrierListener listener : customListenerList) {
@@ -148,7 +153,8 @@ public class ServerListBarrierListener implements BarrierListener {
                     listener.onCommit(regionName, path, remoteBytes);
                 } catch (Exception e) {
                     if (logger.isLoggable(Level.WARNING)) {
-                        logger.log(Level.WARNING, "failed to call onCommit(). thriftClientName=" + thriftClientName + ", listener=" + listener, e);
+                        logger.log(Level.WARNING,
+                                "failed to call onCommit(). thriftClientName=" + thriftClientName + ", listener=" + listener, e);
                     }
                 }
             }
@@ -162,7 +168,8 @@ public class ServerListBarrierListener implements BarrierListener {
                 listener.onDestroy(regionName);
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "failed to call onDestroy(). thriftClientName=" + thriftClientName + ", listener=" + listener, e);
+                    logger.log(Level.WARNING, "failed to call onDestroy(). thriftClientName=" + thriftClientName + ", listener=" + listener,
+                            e);
                 }
             }
         }
@@ -184,12 +191,8 @@ public class ServerListBarrierListener implements BarrierListener {
 
     @Override
     public String toString() {
-        return "ServerListBarrierListener{" +
-                "thriftClientName='" + thriftClientName + '\'' +
-                ", thriftClient=" + thriftClient +
-                ", localServerSet=" + localServerSet +
-                ", customListenerList=" + customListenerList +
-                '}';
+        return "ServerListBarrierListener{" + "thriftClientName='" + thriftClientName + '\'' + ", thriftClient=" + thriftClient
+                + ", localServerSet=" + localServerSet + ", customListenerList=" + customListenerList + '}';
     }
 
     /**

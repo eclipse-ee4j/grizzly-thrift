@@ -17,9 +17,11 @@
 package org.glassfish.grizzly.thrift.client.pool;
 
 /**
- * This exception will be thrown when the pool cannot create a new instance by {@link org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory#createObject}
- * or there are no valid instances which used to be tested by {@link org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory#validateObject}
- * 
+ * This exception will be thrown when the pool cannot create a new instance by
+ * {@link org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory#createObject}
+ * or there are no valid instances which used to be tested by
+ * {@link org.glassfish.grizzly.thrift.client.pool.PoolableObjectFactory#validateObject}
+ *
  * @author Bongjae Chang
  */
 public class NoValidObjectException extends Exception {

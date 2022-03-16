@@ -33,14 +33,14 @@ import org.apache.thrift.TServiceClient;
  */
 public interface ThriftClient<T extends TServiceClient> extends ThriftClientLifecycle {
 
-    public <U> U execute(final ThriftClientCallback<T, U> callback) throws Exception;
+    <U> U execute(final ThriftClientCallback<T, U> callback) throws Exception;
 
     /**
      * Return the name of the thrift client.
      *
      * @return the name of the thrift client.
      */
-    public String getName();
+    String getName();
 
     /**
      * Add a specific server in this thrift client
@@ -49,7 +49,7 @@ public interface ThriftClient<T extends TServiceClient> extends ThriftClientLife
      * added
      * @return true if the given {@code serverAddress} is added successfully
      */
-    public boolean addServer(final SocketAddress serverAddress);
+    boolean addServer(final SocketAddress serverAddress);
 
     /**
      * Remove the given server in this thrift client
@@ -57,7 +57,7 @@ public interface ThriftClient<T extends TServiceClient> extends ThriftClientLife
      * @param serverAddress the specific server's {@link java.net.SocketAddress} to
      * be removed in this thrift client
      */
-    public void removeServer(final SocketAddress serverAddress);
+    void removeServer(final SocketAddress serverAddress);
 
     /**
      * Check if this thrift client contains the given server
@@ -67,5 +67,5 @@ public interface ThriftClient<T extends TServiceClient> extends ThriftClientLife
      * @return true if this thrift client already contains the given
      * {@code serverAddress}
      */
-    public boolean isInServerList(final SocketAddress serverAddress);
+    boolean isInServerList(final SocketAddress serverAddress);
 }

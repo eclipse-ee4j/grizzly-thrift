@@ -107,7 +107,7 @@ import org.glassfish.grizzly.thrift.http.ThriftHttpClientFilter;
  * Integer result = calculatorThriftClient.execute(new ThriftClientCallback<Calculator.Client, Integer>() {
  *
  *         public Integer call(Calculator.Client client) throws TException {
- *              return client.add(1, 2); } }); // ...
+ * return client.add(1, 2); } }); // ...
  *
  * // shuts down manager.shutdown(); }
  *

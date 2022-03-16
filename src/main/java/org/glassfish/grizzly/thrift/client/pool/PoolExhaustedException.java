@@ -17,7 +17,8 @@
 package org.glassfish.grizzly.thrift.client.pool;
 
 /**
- * This exception will be thrown when the pool is exhausted and cannot or will not borrow another instance
+ * This exception will be thrown when the pool is exhausted and cannot or will
+ * not borrow another instance
  *
  * @author Bongjae Chang
  */

@@ -38,7 +38,7 @@ public interface ThriftClientManager {
      * @param thriftClientFactory thrift client factory
      * @return the ThriftClientBuilder for the named thrift client
      */
-    public <T extends TServiceClient> ThriftClientBuilder createThriftClientBuilder(final String thriftClientName,
+    <T extends TServiceClient> ThriftClientBuilder createThriftClientBuilder(final String thriftClientName,
             final TServiceClientFactory<T> thriftClientFactory);
 
     /**
@@ -47,7 +47,7 @@ public interface ThriftClientManager {
      * @param thriftClientName the name of the thrift client to look for
      * @return the ThriftClient or null if it does exist
      */
-    public <T extends TServiceClient> ThriftClient<T> getThriftClient(final String thriftClientName);
+    <T extends TServiceClient> ThriftClient<T> getThriftClient(final String thriftClientName);
 
     /**
      * Remove a thrift client from the ThriftClientManager. The thrift client will
@@ -56,10 +56,10 @@ public interface ThriftClientManager {
      * @param thriftClientName the thrift client name
      * @return true if the thrift client was removed
      */
-    public boolean removeThriftClient(final String thriftClientName);
+    boolean removeThriftClient(final String thriftClientName);
 
     /**
      * Shuts down the ThriftClientManager.
      */
-    public void shutdown();
+    void shutdown();
 }

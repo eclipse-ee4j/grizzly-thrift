@@ -31,5 +31,5 @@ public interface ThriftClientBuilder<T extends TServiceClient> {
      * @see ThriftClientManager#createThriftClientBuilder(String,
      * org.apache.thrift.TServiceClientFactory)
      */
-    public ThriftClient<T> build();
+    ThriftClient<T> build();
 }

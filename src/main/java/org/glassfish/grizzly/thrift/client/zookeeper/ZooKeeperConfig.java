@@ -21,8 +21,7 @@ import java.io.Serializable;
 /**
  * The configuration for ZooKeeper client
  * <p>
- * Example of use:
- * {@code
+ * Example of use: {@code
  * final GrizzlyThriftClientManager.Builder managerBuilder = new GrizzlyThriftClientManager.Builder();
  * // setup zookeeper server
  * final ZooKeeperConfig zkConfig = ZooKeeperConfig.create("thrift-client-manager", DEFAULT_ZOOKEEPER_ADDRESS);
@@ -69,15 +68,15 @@ public class ZooKeeperConfig implements Serializable {
     /**
      * Create ZKClient's configuration with the specific name or Id
      *
-     * @param name                name or id
-     * @param zooKeeperServerList comma separated host:port pairs, each corresponding to a zookeeper server.
-     *                            e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
+     * @param name name or id
+     * @param zooKeeperServerList comma separated host:port pairs, each
+     * corresponding to a zookeeper server. e.g.
+     * "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
      * @return ZKClient's configuration
      */
     public static ZooKeeperConfig create(final String name, final String zooKeeperServerList) {
         return new ZooKeeperConfig(name, zooKeeperServerList);
     }
-
 
     private ZooKeeperConfig(final String name, final String zooKeeperServerList) {
         this.name = name;
@@ -96,7 +95,8 @@ public class ZooKeeperConfig implements Serializable {
     /**
      * Connect timeout in milli-seconds
      *
-     * @param connectTimeoutInMillis connect timeout. negative value means "never timed out". default is 5000(5 secs).
+     * @param connectTimeoutInMillis connect timeout. negative value means "never
+     * timed out". default is 5000(5 secs).
      */
     public void setConnectTimeoutInMillis(final long connectTimeoutInMillis) {
         this.connectTimeoutInMillis = connectTimeoutInMillis;
@@ -105,7 +105,8 @@ public class ZooKeeperConfig implements Serializable {
     /**
      * Session timeout in milli-seconds
      *
-     * @param sessionTimeoutInMillis Zookeeper connection's timeout. default is 30000(30 secs).
+     * @param sessionTimeoutInMillis Zookeeper connection's timeout. default is
+     * 30000(30 secs).
      */
     public void setSessionTimeoutInMillis(final long sessionTimeoutInMillis) {
         this.sessionTimeoutInMillis = sessionTimeoutInMillis;
@@ -114,7 +115,8 @@ public class ZooKeeperConfig implements Serializable {
     /**
      * Delay time in seconds for committing
      *
-     * @param commitDelayTimeInSecs delay time before committing. default is 60(60secs).
+     * @param commitDelayTimeInSecs delay time before committing. default is
+     * 60(60secs).
      */
     public void setCommitDelayTimeInSecs(final long commitDelayTimeInSecs) {
         this.commitDelayTimeInSecs = commitDelayTimeInSecs;
@@ -146,13 +148,8 @@ public class ZooKeeperConfig implements Serializable {
 
     @Override
     public String toString() {
-        return "ZooKeeperConfig{" +
-                "name='" + name + '\'' +
-                ", zooKeeperServerList='" + zooKeeperServerList + '\'' +
-                ", rootPath='" + rootPath + '\'' +
-                ", connectTimeoutInMillis=" + connectTimeoutInMillis +
-                ", sessionTimeoutInMillis=" + sessionTimeoutInMillis +
-                ", commitDelayTimeInSecs=" + commitDelayTimeInSecs +
-                '}';
+        return "ZooKeeperConfig{" + "name='" + name + '\'' + ", zooKeeperServerList='" + zooKeeperServerList + '\'' + ", rootPath='"
+                + rootPath + '\'' + ", connectTimeoutInMillis=" + connectTimeoutInMillis + ", sessionTimeoutInMillis="
+                + sessionTimeoutInMillis + ", commitDelayTimeInSecs=" + commitDelayTimeInSecs + '}';
     }
 }
