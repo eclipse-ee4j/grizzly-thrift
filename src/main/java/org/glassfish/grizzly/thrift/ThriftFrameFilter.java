@@ -16,6 +16,8 @@
 
 package org.glassfish.grizzly.thrift;
 
+import java.io.IOException;
+
 import org.glassfish.grizzly.Buffer;
 import org.glassfish.grizzly.Connection;
 import org.glassfish.grizzly.Grizzly;
@@ -26,12 +28,12 @@ import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.memory.Buffers;
 import org.glassfish.grizzly.memory.MemoryManager;
 
-import java.io.IOException;
-
 /**
- * ThriftFrameFilter supports TFramedTranport that ensures a fully read message by preceding messages with a 4-byte frame size.
+ * ThriftFrameFilter supports TFramedTranport that ensures a fully read message
+ * by preceding messages with a 4-byte frame size.
  * <p>
- * If the frame size exceeds the max size which you can set by constructor's parameter, exception will be thrown.
+ * If the frame size exceeds the max size which you can set by constructor's
+ * parameter, exception will be thrown.
  *
  * @author Bongjae Chang
  */

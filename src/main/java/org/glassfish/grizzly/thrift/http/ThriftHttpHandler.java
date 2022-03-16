@@ -16,6 +16,8 @@
 
 package org.glassfish.grizzly.thrift.http;
 
+import java.io.IOException;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -30,14 +32,14 @@ import org.glassfish.grizzly.memory.MemoryManager;
 import org.glassfish.grizzly.thrift.TGrizzlyServerTransport;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 
-import java.io.IOException;
-
 /**
  * ThriftHttpHandler is a server-side http handler for Thrift RPC processors.
  * <p>
- * You can set the specific response size by constructor for optimal performance.
+ * You can set the specific response size by constructor for optimal
+ * performance.
  * <p>
  * Usages:
+ *
  * <pre>
  * {@code
  * final user-generated.thrift.Processor tprocessor = new user-generated.thrift.Processor(new user-generated.thrift.Handler);
@@ -93,6 +95,7 @@ public class ThriftHttpHandler extends HttpHandler {
         if (processor == null) {
             throw new IllegalStateException("TProcessor should not be null");
         }
+
         final Buffer inputBuffer = request.getInputBuffer().getBuffer();
         if (inputBuffer == null) {
             throw new IOException("input buffer should not be null");
@@ -125,6 +128,7 @@ public class ThriftHttpHandler extends HttpHandler {
             outputStream.close();
         } catch (IOException ignore) {
         }
+
         ttransport.close();
     }
 }

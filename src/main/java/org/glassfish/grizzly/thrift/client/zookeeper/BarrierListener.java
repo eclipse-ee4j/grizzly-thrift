@@ -26,25 +26,26 @@ public interface BarrierListener {
     /**
      * Called when the barrier is registered
      *
-     * @param regionName  current region name
-     * @param path        current data path
+     * @param regionName current region name
+     * @param path current data path
      * @param remoteBytes the data of the zookeeper server. This could be null.
      */
-    public void onInit(final String regionName, final String path, final byte[] remoteBytes);
+    void onInit(final String regionName, final String path, final byte[] remoteBytes);
 
     /**
-     * Called by zookeeper clients at the same time when all are prepared for commiting something
+     * Called by zookeeper clients at the same time when all are prepared for
+     * commiting something
      *
-     * @param regionName  current region name
-     * @param path        current data path
+     * @param regionName current region name
+     * @param path current data path
      * @param remoteBytes the changed data of the zookeeper server
      */
-    public void onCommit(final String regionName, final String path, final byte[] remoteBytes);
+    void onCommit(final String regionName, final String path, final byte[] remoteBytes);
 
     /**
      * Called when the barrier is unregistered
      *
      * @param regionName current region name
      */
-    public void onDestroy(final String regionName);
+    void onDestroy(final String regionName);
 }

@@ -16,6 +16,8 @@
 
 package org.glassfish.grizzly.thrift;
 
+import java.io.IOException;
+
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -29,14 +31,14 @@ import org.glassfish.grizzly.filterchain.NextAction;
 import org.glassfish.grizzly.memory.MemoryManager;
 import org.glassfish.grizzly.utils.BufferOutputStream;
 
-import java.io.IOException;
-
 /**
  * ThriftServerFilter is a server-side filter for Thrift RPC processors.
  * <p>
- * You can set the specific response size by constructor for optimal performance.
+ * You can set the specific response size by constructor for optimal
+ * performance.
  * <p>
  * Usages:
+ *
  * <pre>
  * {@code
  * final FilterChainBuilder serverFilterChainBuilder = FilterChainBuilder.stateless();

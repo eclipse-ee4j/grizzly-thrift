@@ -16,20 +16,6 @@
 
 package org.glassfish.grizzly.thrift.client;
 
-import org.apache.thrift.TServiceClient;
-import org.apache.thrift.TServiceClientFactory;
-import org.glassfish.grizzly.Grizzly;
-import org.glassfish.grizzly.IOStrategy;
-import org.glassfish.grizzly.filterchain.FilterChainBuilder;
-import org.glassfish.grizzly.filterchain.TransportFilter;
-import org.glassfish.grizzly.thrift.ThriftClientFilter;
-import org.glassfish.grizzly.thrift.ThriftFrameFilter;
-import org.glassfish.grizzly.thrift.client.zookeeper.ZKClient;
-import org.glassfish.grizzly.thrift.client.zookeeper.ZooKeeperConfig;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
-import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
-import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
-
 import java.io.IOException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -37,12 +23,31 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.thrift.TServiceClient;
+import org.apache.thrift.TServiceClientFactory;
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.IOStrategy;
+import org.glassfish.grizzly.filterchain.FilterChainBuilder;
+import org.glassfish.grizzly.filterchain.TransportFilter;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransport;
+import org.glassfish.grizzly.nio.transport.TCPNIOTransportBuilder;
+import org.glassfish.grizzly.strategies.SameThreadIOStrategy;
+import org.glassfish.grizzly.thrift.ThriftClientFilter;
+import org.glassfish.grizzly.thrift.ThriftFrameFilter;
+import org.glassfish.grizzly.thrift.client.zookeeper.ZKClient;
+import org.glassfish.grizzly.thrift.client.zookeeper.ZooKeeperConfig;
+
 /**
  * The implementation of the {@link ThriftClientManager} based on Grizzly
  * <p>
- * This thrift client manager has a key(String thrift client name)/value({@link GrizzlyThriftClient} map for retrieving thrift clients.
- * If the specific {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport GrizzlyTransport} is not set at creation time, this will create a main GrizzlyTransport.
- * The {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport GrizzlyTransport} must contain {@link org.glassfish.grizzly.thrift.ThriftFrameFilter} and {@link org.glassfish.grizzly.thrift.ThriftClientFilter}.
+ * This thrift client manager has a key(String thrift client
+ * name)/value({@link GrizzlyThriftClient} map for retrieving thrift clients. If
+ * the specific {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport
+ * GrizzlyTransport} is not set at creation time, this will create a main
+ * GrizzlyTransport. The
+ * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport GrizzlyTransport}
+ * must contain {@link org.glassfish.grizzly.thrift.ThriftFrameFilter} and
+ * {@link org.glassfish.grizzly.thrift.ThriftClientFilter}.
  *
  * @author Bongjae Chang
  */
@@ -50,8 +55,7 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
 
     private static final Logger logger = Grizzly.logger(GrizzlyThriftClientManager.class);
 
-    private final ConcurrentHashMap<String, GrizzlyThriftClient<?>> thriftClients =
-            new ConcurrentHashMap<String, GrizzlyThriftClient<?>>();
+    private final ConcurrentHashMap<String, GrizzlyThriftClient<?>> thriftClients = new ConcurrentHashMap<String, GrizzlyThriftClient<?>>();
     private final TCPNIOTransport transport;
     private final boolean isExternalTransport;
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
@@ -65,7 +69,8 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         if (transportLocal == null) {
             isExternalTransport = false;
             final FilterChainBuilder clientFilterChainBuilder = FilterChainBuilder.stateless();
-            clientFilterChainBuilder.add(new TransportFilter()).add(new ThriftFrameFilter(builder.maxThriftFrameLength)).add(new ThriftClientFilter());
+            clientFilterChainBuilder.add(new TransportFilter()).add(new ThriftFrameFilter(builder.maxThriftFrameLength))
+                    .add(new ThriftClientFilter());
             final TCPNIOTransportBuilder clientTCPNIOTransportBuilder = TCPNIOTransportBuilder.newInstance();
             transportLocal = clientTCPNIOTransportBuilder.build();
             transportLocal.setProcessor(clientFilterChainBuilder.build());
@@ -117,7 +122,8 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
      * {@inheritDoc}
      */
     @Override
-    public <T extends TServiceClient> GrizzlyThriftClient.Builder<T> createThriftClientBuilder(final String thriftClientName, final TServiceClientFactory<T> thriftClientFactory) {
+    public <T extends TServiceClient> GrizzlyThriftClient.Builder<T> createThriftClientBuilder(final String thriftClientName,
+            final TServiceClientFactory<T> thriftClientFactory) {
         return new GrizzlyThriftClient.Builder<T>(thriftClientName, this, transport, thriftClientFactory);
     }
 
@@ -180,16 +186,16 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
     /**
      * Add the given {@code thriftClient} to this thrift client manager
      * <p/>
-     * If this returns false, the given {@code thriftClient} should be stopped by caller.
-     * Currently, this method is called by only {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClient.Builder#build()}.
+     * If this returns false, the given {@code thriftClient} should be stopped by
+     * caller. Currently, this method is called by only
+     * {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClient.Builder#build()}.
      *
      * @param thriftClient a thrift client instance
      * @return true if the thrift client was added
      */
     <T extends TServiceClient> boolean addThriftClient(final GrizzlyThriftClient<T> thriftClient) {
-        return !shutdown.get() &&
-                thriftClient != null && thriftClients.putIfAbsent(thriftClient.getName(), thriftClient) == null &&
-                !(shutdown.get() && thriftClients.remove(thriftClient.getName()) == thriftClient);
+        return !shutdown.get() && thriftClient != null && thriftClients.putIfAbsent(thriftClient.getName(), thriftClient) == null
+                && !(shutdown.get() && thriftClients.remove(thriftClient.getName()) == thriftClient);
     }
 
     ZKClient getZkClient() {
@@ -215,13 +221,16 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         private ZooKeeperConfig zooKeeperConfig;
 
         /**
-         * Set the specific {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport GrizzlyTransport}
+         * Set the specific {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport
+         * GrizzlyTransport}
          * <p>
-         * If this is not set or set to be null, {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClientManager} will create a default transport.
-         * The given {@code transport} must be always started state if it is not null.
-         * Default is null.
+         * If this is not set or set to be null,
+         * {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClientManager} will
+         * create a default transport. The given {@code transport} must be always
+         * started state if it is not null. Default is null.
          *
-         * @param transport the specific Grizzly's {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}
+         * @param transport the specific Grizzly's
+         * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}
          * @return this builder
          */
         public Builder transport(final TCPNIOTransport transport) {
@@ -232,8 +241,10 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         /**
          * Set selector threads' count
          * <p>
-         * If this thrift client manager will create a default transport, the given selector counts will be passed to {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}.
-         * Default is processors' count * 2.
+         * If this thrift client manager will create a default transport, the given
+         * selector counts will be passed to
+         * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}. Default is
+         * processors' count * 2.
          *
          * @param selectorRunnersCount selector threads' count
          * @return this builder
@@ -246,8 +257,10 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         /**
          * Set the specific IO Strategy of Grizzly
          * <p>
-         * If this thrift client manager will create a default transport, the given {@link org.glassfish.grizzly.IOStrategy} will be passed to {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}.
-         * Default is {@link org.glassfish.grizzly.strategies.SameThreadIOStrategy}.
+         * If this thrift client manager will create a default transport, the given
+         * {@link org.glassfish.grizzly.IOStrategy} will be passed to
+         * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}. Default is
+         * {@link org.glassfish.grizzly.strategies.SameThreadIOStrategy}.
          *
          * @param ioStrategy the specific IO Strategy
          * @return this builder
@@ -260,8 +273,10 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         /**
          * Enable or disable the blocking mode
          * <p>
-         * If this thrift client manager will create a default transport, the given mode will be passed to {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}.
-         * Default is false.
+         * If this thrift client manager will create a default transport, the given mode
+         * will be passed to
+         * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}. Default is
+         * false.
          *
          * @param blocking true means the blocking mode
          * @return this builder
@@ -274,9 +289,12 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         /**
          * Set the specific worker thread pool
          * <p>
-         * If this thrift client manager will create a default transport, the given {@link java.util.concurrent.ExecutorService} will be passed to {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}.
-         * This is only effective if {@link org.glassfish.grizzly.IOStrategy} is not {@link org.glassfish.grizzly.strategies.SameThreadIOStrategy}.
-         * Default is null.
+         * If this thrift client manager will create a default transport, the given
+         * {@link java.util.concurrent.ExecutorService} will be passed to
+         * {@link org.glassfish.grizzly.nio.transport.TCPNIOTransport}. This is only
+         * effective if {@link org.glassfish.grizzly.IOStrategy} is not
+         * {@link org.glassfish.grizzly.strategies.SameThreadIOStrategy}. Default is
+         * null.
          *
          * @param workerThreadPool worker thread pool
          * @return this builder
@@ -287,9 +305,11 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         }
 
         /**
-         * Set the {@link ZooKeeperConfig} for synchronizing thrift server list among thrift clients
+         * Set the {@link ZooKeeperConfig} for synchronizing thrift server list among
+         * thrift clients
          *
-         * @param zooKeeperConfig zookeeper config. if {@code zooKeeperConfig} is null, the zookeeper is never used.
+         * @param zooKeeperConfig zookeeper config. if {@code zooKeeperConfig} is null,
+         * the zookeeper is never used.
          * @return this builder
          */
         public Builder zooKeeperConfig(final ZooKeeperConfig zooKeeperConfig) {
@@ -309,7 +329,9 @@ public class GrizzlyThriftClientManager implements ThriftClientManager {
         }
 
         /**
-         * Create a {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClientManager} instance with this builder's properties
+         * Create a
+         * {@link org.glassfish.grizzly.thrift.client.GrizzlyThriftClientManager}
+         * instance with this builder's properties
          *
          * @return a thrift client manager
          */

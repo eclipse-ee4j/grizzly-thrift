@@ -16,8 +16,6 @@
 
 package org.glassfish.grizzly.thrift.client.pool;
 
-import org.glassfish.grizzly.Grizzly;
-
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,8 +32,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.glassfish.grizzly.Grizzly;
+
 /**
- * The basic implementation of {@link ObjectPool} for high performance and scalability
+ * The basic implementation of {@link ObjectPool} for high performance and
+ * scalability
  *
  * This class should be thread-safe.
  *
@@ -72,7 +73,8 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         this.keepAliveTimeoutInSecs = builder.keepAliveTimeoutInSecs;
         if (keepAliveTimeoutInSecs > 0) {
             this.scheduledExecutor = Executors.newSingleThreadScheduledExecutor();
-            this.scheduledFuture = scheduledExecutor.scheduleWithFixedDelay(new EvictionTask(), keepAliveTimeoutInSecs, keepAliveTimeoutInSecs, TimeUnit.SECONDS);
+            this.scheduledFuture = scheduledExecutor.scheduleWithFixedDelay(new EvictionTask(), keepAliveTimeoutInSecs,
+                    keepAliveTimeoutInSecs, TimeUnit.SECONDS);
         } else {
             this.scheduledExecutor = null;
             this.scheduledFuture = null;
@@ -250,8 +252,8 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         return result;
     }
 
-    private V createIfUnderSpecificSize(final int specificSize, final QueuePool<V> pool, final K key,
-                                        final boolean validation) throws NoValidObjectException, TimeoutException {
+    private V createIfUnderSpecificSize(final int specificSize, final QueuePool<V> pool, final K key, final boolean validation)
+            throws NoValidObjectException, TimeoutException {
         if (destroyed.get()) {
             throw new IllegalStateException("pool has already destroyed");
         }
@@ -368,7 +370,7 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         final QueuePool<V> pool = keyedObjectPool.get(key);
         if (pool == null) {
             if (logger.isLoggable(Level.FINEST)) {
-                logger.log(Level.FINEST, "the pool was not found. managed={0}, key={1}, value={2}", new Object[]{managed, key, value});
+                logger.log(Level.FINEST, "the pool was not found. managed={0}, key={1}, value={2}", new Object[] { managed, key, value });
             }
             try {
                 factory.destroyObject(key, value);
@@ -379,7 +381,7 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
 
         final boolean removed = pool.queue.remove(value);
         if (logger.isLoggable(Level.FINEST)) {
-            logger.log(Level.FINEST, "pool.queue.remove={0}, key={1}, value={2}", new Object[]{removed, key, value});
+            logger.log(Level.FINEST, "pool.queue.remove={0}, key={1}, value={2}", new Object[] { removed, key, value });
         }
 
         try {
@@ -535,9 +537,10 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
     }
 
     /**
-     * For storing idle objects, {@link BlockingQueue} will be used.
-     * If this pool has max size(bounded pool), it uses {@link LinkedBlockingQueue}.
-     * Otherwise, this pool uses unbounded queue like {@link LinkedBlockingQueue} for idle objects.
+     * For storing idle objects, {@link BlockingQueue} will be used. If this pool
+     * has max size(bounded pool), it uses {@link LinkedBlockingQueue}. Otherwise,
+     * this pool uses unbounded queue like {@link LinkedBlockingQueue} for idle
+     * objects.
      */
     private static class QueuePool<V> {
         private final AtomicInteger poolSizeHint = new AtomicInteger();
@@ -555,7 +558,8 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
     }
 
     /**
-     * This task which is scheduled by pool's KeepAliveTime will evict idle objects until pool'size will reach the min's.
+     * This task which is scheduled by pool's KeepAliveTime will evict idle objects
+     * until pool'size will reach the min's.
      */
     private class EvictionTask implements Runnable {
 
@@ -610,7 +614,8 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         /**
          * BaseObjectPool's builder constructor
          *
-         * @param factory {@link PoolableObjectFactory} which is for creating, validating and destroying an object
+         * @param factory {@link PoolableObjectFactory} which is for creating,
+         * validating and destroying an object
          */
         public Builder(PoolableObjectFactory<K, V> factory) {
             this.factory = factory;
@@ -647,7 +652,9 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         }
 
         /**
-         * Set whether this pool should validate the object by {@link PoolableObjectFactory#validateObject} before returning a borrowed object to the user
+         * Set whether this pool should validate the object by
+         * {@link PoolableObjectFactory#validateObject} before returning a borrowed
+         * object to the user
          * <p>
          * Default is false.
          *
@@ -660,7 +667,9 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         }
 
         /**
-         * Set whether this pool should validate the object by {@link PoolableObjectFactory#validateObject} before returning a borrowed object to the pool
+         * Set whether this pool should validate the object by
+         * {@link PoolableObjectFactory#validateObject} before returning a borrowed
+         * object to the pool
          * <p>
          * Default is false.
          *
@@ -675,9 +684,10 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         /**
          * Set disposable property
          * <p>
-         * If this pool is bounded and doesn't have idle objects any more, temporary object will be returned to the user if {@code disposable} is true.
-         * The disposable object will be returned to the pool, it will be destroyed silently.
-         * Default is false.
+         * If this pool is bounded and doesn't have idle objects any more, temporary
+         * object will be returned to the user if {@code disposable} is true. The
+         * disposable object will be returned to the pool, it will be destroyed
+         * silently. Default is false.
          *
          * @param disposable true if the pool allows disposable objects
          * @return this builder
@@ -690,10 +700,10 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
         /**
          * Set the KeepAliveTimeout of this pool
          * <p>
-         * This pool will schedule EvictionTask with this interval.
-         * EvictionTask will evict idle objects if this pool has more than min objects.
-         * If the given parameter is negative, this pool never schedules EvictionTask.
-         * Default is 1800.
+         * This pool will schedule EvictionTask with this interval. EvictionTask will
+         * evict idle objects if this pool has more than min objects. If the given
+         * parameter is negative, this pool never schedules EvictionTask. Default is
+         * 1800.
          *
          * @param keepAliveTimeoutInSecs KeepAliveTimeout in seconds
          * @return this builder
@@ -718,14 +728,8 @@ public class BaseObjectPool<K, V> implements ObjectPool<K, V> {
 
     @Override
     public String toString() {
-        return "BaseObjectPool{" +
-                "keepAliveTimeoutInSecs=" + keepAliveTimeoutInSecs +
-                ", disposable=" + disposable +
-                ", borrowValidation=" + borrowValidation +
-                ", returnValidation=" + returnValidation +
-                ", max=" + max +
-                ", min=" + min +
-                ", factory=" + factory +
-                '}';
+        return "BaseObjectPool{" + "keepAliveTimeoutInSecs=" + keepAliveTimeoutInSecs + ", disposable=" + disposable + ", borrowValidation="
+                + borrowValidation + ", returnValidation=" + returnValidation + ", max=" + max + ", min=" + min + ", factory=" + factory
+                + '}';
     }
 }

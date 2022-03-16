@@ -16,16 +16,6 @@
 
 package org.glassfish.grizzly.thrift.client.zookeeper;
 
-import org.apache.zookeeper.CreateMode;
-import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.ZooKeeper;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Stat;
-import org.glassfish.grizzly.Grizzly;
-
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
@@ -48,22 +38,36 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Stat;
+import org.glassfish.grizzly.Grizzly;
+
 /**
  * Zookeeper client implementation for barrier and recoverable operation
  * <p>
- * All operations will be executed on the valid connection because the failed connection will be reconnected automatically.
- * This has Barrier function.
- * {@link BarrierListener} can be registered with a specific region and initial data by the {@link #registerBarrier} method and unregistered by the {@link #unregisterBarrier} method.
- * If the zookeeper server doesn't have the data node, the given initial data will be set in the server when the {@link #registerBarrier} method is called.
- * If the specific data will be changed in remote zookeeper server, all clients which have joined will receive changes simultaneously.
- * If all clients receive changes successfully,
- * {@link BarrierListener#onCommit} will be called simultaneously at the scheduled time(data modification time + {@code commitDelayTimeInSecs}).
+ * All operations will be executed on the valid connection because the failed
+ * connection will be reconnected automatically. This has Barrier function.
+ * {@link BarrierListener} can be registered with a specific region and initial
+ * data by the {@link #registerBarrier} method and unregistered by the
+ * {@link #unregisterBarrier} method. If the zookeeper server doesn't have the
+ * data node, the given initial data will be set in the server when the
+ * {@link #registerBarrier} method is called. If the specific data will be
+ * changed in remote zookeeper server, all clients which have joined will
+ * receive changes simultaneously. If all clients receive changes successfully,
+ * {@link BarrierListener#onCommit} will be called simultaneously at the
+ * scheduled time(data modification time + {@code commitDelayTimeInSecs}).
  * <p>
- * This also supports some safe APIs which is similar to original {@link ZooKeeper}'s APIs
- * like create, delete, exists, getChildren, getData and setData.
+ * This also supports some safe APIs which is similar to original
+ * {@link ZooKeeper}'s APIs like create, delete, exists, getChildren, getData
+ * and setData.
  * <p>
- * Examples of barrier's use:
- * {@code
+ * Examples of barrier's use: {@code
  * // initial
  * final ZKClient.Builder builder = new ZKClient.Builder("myZookeeperClient", "localhost:2181");
  * builder.rootPath(ROOT).connectTimeoutInMillis(3000).sessionTimeoutInMillis(30000).commitDelayTimeInSecs(60);
@@ -76,8 +80,7 @@ import java.util.logging.Logger;
  * zkClient.shutdown();
  * }
  * <p>
- * [NOTE]
- * Zookeeper already guides some simple barrier examples:
+ * [NOTE] Zookeeper already guides some simple barrier examples:
  * http://zookeeper.apache.org/doc/r3.3.4/zookeeperTutorial.html
  * http://code.google.com/p/good-samples/source/browse/trunk/zookeeper-3.x/src/main/java/com/googlecode/goodsamples/zookeeper/barrier/Barrier.java
  * <p>
@@ -93,10 +96,9 @@ public class ZKClient {
     private static final String JVM_AND_HOST_UNIQUE_ID = ManagementFactory.getRuntimeMXBean().getName();
     private static final int RETRY_COUNT_UNTIL_CONNECTED = 3;
     /**
-     * Path information:
-     * /root/thrift/region_name/current/(client1, client2, ...)
-     * /root/thrift/region_name/data
-     * /root/thrift/region_name/participants/(client1, client2, ...)
+     * Path information: /root/thrift/region_name/current/(client1, client2, ...)
+     * /root/thrift/region_name/data /root/thrift/region_name/participants/(client1,
+     * client2, ...)
      */
     private static final String BASE_PATH = "/thrift";
     private static final String CURRENT_PATH = "/current";
@@ -143,9 +145,10 @@ public class ZKClient {
     /**
      * Connect this client to the zookeeper server
      * <p>
-     * this method will wait for {@link Watcher.Event.KeeperState#SyncConnected} from the zookeeper server.
+     * this method will wait for {@link Watcher.Event.KeeperState#SyncConnected}
+     * from the zookeeper server.
      *
-     * @throws IOException          the io exception of internal ZooKeeper
+     * @throws IOException the io exception of internal ZooKeeper
      * @throws InterruptedException the interrupted exception of internal ZooKeeper
      * @return true if the client is connected. Otherwise false
      */
@@ -155,14 +158,12 @@ public class ZKClient {
             if (connected) {
                 return true;
             }
-            zooKeeper = new ZooKeeper(zooKeeperServerList,
-                    (int) sessionTimeoutInMillis,
-                    new InternalWatcher(new Watcher() {
+            zooKeeper = new ZooKeeper(zooKeeperServerList, (int) sessionTimeoutInMillis, new InternalWatcher(new Watcher() {
 
-                        @Override
-                        public void process(WatchedEvent event) {
-                        }
-                    }));
+                @Override
+                public void process(WatchedEvent event) {
+                }
+            }));
             if (!ensureConnected(connectTimeoutInMillis)) {
                 zooKeeper.close();
                 currentState = Watcher.Event.KeeperState.Disconnected;
@@ -250,9 +251,10 @@ public class ZKClient {
     /**
      * Register the specific barrier
      *
-     * @param regionName  specific region name
-     * @param listener    {@link BarrierListener} implementations
-     * @param initialData initial data. if the zookeeper server doesn't have any data, this will be set. "null" means {@code NO_DATA} which is byte[0].
+     * @param regionName specific region name
+     * @param listener {@link BarrierListener} implementations
+     * @param initialData initial data. if the zookeeper server doesn't have any
+     * data, this will be set. "null" means {@code NO_DATA} which is byte[0].
      * @return the registered data path of the zookeeper server
      */
     public String registerBarrier(final String regionName, final BarrierListener listener, final byte[] initialData) {
@@ -273,8 +275,7 @@ public class ZKClient {
         createWhenThereIsNoNode(currentRegionPath + PARTICIPANTS_PATH, NO_DATA, CreateMode.PERSISTENT); // ensure participants path
 
         final String currentDataPath = currentRegionPath + DATA_PATH;
-        final boolean dataCreated = createWhenThereIsNoNode(currentDataPath,
-                initialData == null ? NO_DATA : initialData,
+        final boolean dataCreated = createWhenThereIsNoNode(currentDataPath, initialData == null ? NO_DATA : initialData,
                 CreateMode.PERSISTENT); // ensure data path
         if (!dataCreated) { // if the remote data already exists
             if (logger.isLoggable(Level.INFO)) {
@@ -285,26 +286,28 @@ public class ZKClient {
                 listener.onInit(regionName, currentDataPath, remoteDataBytes);
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "failed to onInit. name=" + name + ", regionName=" + regionName + ", listener=" + listener, e);
+                    logger.log(Level.WARNING, "failed to onInit. name=" + name + ", regionName=" + regionName + ", listener=" + listener,
+                            e);
                 }
             }
         } else {
             if (logger.isLoggable(Level.INFO)) {
-                logger.log(Level.INFO,
-                        "initial data was set because there was no remote data in the zookeeper server. initialData={0}",
+                logger.log(Level.INFO, "initial data was set because there was no remote data in the zookeeper server. initialData={0}",
                         initialData);
             }
             try {
                 listener.onInit(regionName, currentDataPath, null);
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "failed to onInit. name=" + name + ", regionName=" + regionName + ", listener=" + listener, e);
+                    logger.log(Level.WARNING, "failed to onInit. name=" + name + ", regionName=" + regionName + ", listener=" + listener,
+                            e);
                 }
             }
         }
         registerEphemeralNodeAndWatcher(regionName);
         if (logger.isLoggable(Level.FINE)) {
-            logger.log(Level.FINE, "the path \"{0}\" will be watched. name={1}, regionName={2}", new Object[]{name, currentDataPath, regionName});
+            logger.log(Level.FINE, "the path \"{0}\" will be watched. name={1}, regionName={2}",
+                    new Object[] { name, currentDataPath, regionName });
         }
         return currentDataPath;
     }
@@ -343,7 +346,8 @@ public class ZKClient {
                 listener.onDestroy(regionName);
             } catch (Exception e) {
                 if (logger.isLoggable(Level.WARNING)) {
-                    logger.log(Level.WARNING, "failed to onDestroy. name=" + name + ", regionName=" + regionName + ", listener=" + listener, e);
+                    logger.log(Level.WARNING, "failed to onDestroy. name=" + name + ", regionName=" + regionName + ", listener=" + listener,
+                            e);
                 }
             }
         }
@@ -352,7 +356,8 @@ public class ZKClient {
     public String create(final String path, final byte[] data, final List<ACL> acl, final CreateMode createMode) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this create()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this create()");
             }
             return null;
         }
@@ -374,7 +379,8 @@ public class ZKClient {
     public Stat exists(final String path, final boolean watch) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this exists()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this exists()");
             }
             return null;
         }
@@ -396,7 +402,8 @@ public class ZKClient {
     public Stat exists(final String path, final Watcher watch) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this exists()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this exists()");
             }
             return null;
         }
@@ -418,7 +425,8 @@ public class ZKClient {
     public List<String> getChildren(final String path, final boolean watch) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this getChildren()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this getChildren()");
             }
             return null;
         }
@@ -440,7 +448,8 @@ public class ZKClient {
     public List<String> getChildren(final String path, final Watcher watcher) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this getChildren()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this getChildren()");
             }
             return null;
         }
@@ -462,7 +471,8 @@ public class ZKClient {
     public byte[] getData(final String path, final boolean watch, final Stat stat) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this getData()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this getData()");
             }
             return null;
         }
@@ -484,7 +494,8 @@ public class ZKClient {
     public byte[] getData(final String path, final Watcher watcher) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this getData()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this getData()");
             }
             return null;
         }
@@ -506,7 +517,8 @@ public class ZKClient {
     public Stat setData(final String path, final byte[] data, final int version) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this setData()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this setData()");
             }
             return null;
         }
@@ -519,7 +531,8 @@ public class ZKClient {
             });
         } catch (Exception e) {
             if (logger.isLoggable(Level.SEVERE)) {
-                logger.log(Level.SEVERE, "failed to do \"setData\". path=" + path + ", data=" + Arrays.toString(data) + ", version=" + version, e);
+                logger.log(Level.SEVERE,
+                        "failed to do \"setData\". path=" + path + ", data=" + Arrays.toString(data) + ", version=" + version, e);
             }
             return null;
         }
@@ -528,7 +541,8 @@ public class ZKClient {
     public boolean delete(final String path, final int version) {
         if (zooKeeper == null) {
             if (logger.isLoggable(Level.WARNING)) {
-                logger.log(Level.WARNING, "this client has not been connected. please call ZKClient#connect() method before calling this delete()");
+                logger.log(Level.WARNING,
+                        "this client has not been connected. please call ZKClient#connect() method before calling this delete()");
             }
             return false;
         }
@@ -616,15 +630,14 @@ public class ZKClient {
         @Override
         public void process(final WatchedEvent event) {
             if (event != null && logger.isLoggable(Level.FINER)) {
-                logger.log(Level.FINER,
-                        "received event. eventState={0}, eventType={1}, eventPath={2}, watcher={3}",
-                        new Object[]{event.getState(), event.getType(), event.getPath(), this});
+                logger.log(Level.FINER, "received event. eventState={0}, eventType={1}, eventPath={2}, watcher={3}",
+                        new Object[] { event.getState(), event.getType(), event.getPath(), this });
             }
             if (!running.get()) {
                 if (event != null && logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO,
                             "this event will be ignored because this client is shutting down or already has shutted down. name={0}, eventState={1}, eventType={2}, eventPath={3}, watcher={4}",
-                            new Object[]{name, event.getState(), event.getType(), event.getPath(), this});
+                            new Object[] { name, event.getState(), event.getType(), event.getPath(), this });
                 }
                 return;
             }
@@ -638,9 +651,7 @@ public class ZKClient {
 
         @Override
         public String toString() {
-            return "InternalWatcher{" +
-                    "inner=" + inner +
-                    '}';
+            return "InternalWatcher{" + "inner=" + inner + '}';
         }
     }
 
@@ -673,7 +684,7 @@ public class ZKClient {
                 if (logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO,
                             "this event will be ignored because this region already has unregistered. name={0}, regionName={1}, eventState={2}, eventType={3}, eventPath={4}, watcher={5}",
-                            new Object[]{name, regionName, event.getState(), event.getType(), event.getPath(), this});
+                            new Object[] { name, regionName, event.getState(), event.getType(), event.getPath(), this });
                 }
                 return;
             }
@@ -685,12 +696,12 @@ public class ZKClient {
             final String currentNodesPath = currentRegionPath + CURRENT_PATH;
             final String currentParticipantPath = currentRegionPath + PARTICIPANTS_PATH;
             final String currentDataPath = currentRegionPath + DATA_PATH;
-            if ((eventType == Event.EventType.NodeDataChanged || eventType == Event.EventType.NodeCreated) &&
-                    currentDataPath.equals(eventPath)) { // data changed
+            if ((eventType == Event.EventType.NodeDataChanged || eventType == Event.EventType.NodeCreated)
+                    && currentDataPath.equals(eventPath)) { // data changed
                 if (logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO,
-                               "the central data has been changed in the remote zookeeper server. name={0}, regionName={1}, eventType={2}, eventPath={3}",
-                               new Object[]{name, regionName, eventType, eventPath});
+                            "the central data has been changed in the remote zookeeper server. name={0}, regionName={1}, eventType={2}, eventPath={3}",
+                            new Object[] { name, regionName, eventType, eventPath });
                 }
                 final byte[] currentDataBytes;
                 final Stat currentDataStat = new Stat();
@@ -701,8 +712,8 @@ public class ZKClient {
                 if (currentDataBytes == null) {
                     if (logger.isLoggable(Level.WARNING)) {
                         logger.log(Level.WARNING,
-                                   "failed to get the remote changes. name={0}, regionName={1}, eventType={2}, eventPath={3}",
-                                   new Object[]{name, regionName, eventType, eventPath});
+                                "failed to get the remote changes. name={0}, regionName={1}, eventType={2}, eventPath={3}",
+                                new Object[] { name, regionName, eventType, eventPath });
                     }
                 }
                 final String myParticipantPath = currentParticipantPath + uniqueIdPath;
@@ -725,15 +736,14 @@ public class ZKClient {
                     }
                     remoteDataBytes = currentDataBytes;
                     remoteDataStat = currentDataStat;
-                    if (currentDataBytes != null && exists(myParticipantPath, false) == null &&
-                        create(myParticipantPath, NO_DATA, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL) == null) {
+                    if (currentDataBytes != null && exists(myParticipantPath, false) == null
+                            && create(myParticipantPath, NO_DATA, ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.EPHEMERAL) == null) {
                         if (logger.isLoggable(Level.WARNING)) {
                             logger.log(Level.WARNING, "failed to create myParticipantPath. path={0}", myParticipantPath);
                         }
                     }
                     // prepared to roll back
-                    final Long scheduled =
-                            currentDataStat.getMtime() + TimeUnit.SECONDS.toMillis(commitDelayTimeInSecs * 2);
+                    final Long scheduled = currentDataStat.getMtime() + TimeUnit.SECONDS.toMillis(commitDelayTimeInSecs * 2);
                     final long remaining = scheduled - System.currentTimeMillis();
                     rollbackFuture = scheduledExecutor.schedule(new Runnable() {
                         @Override
@@ -741,20 +751,19 @@ public class ZKClient {
                             regionLock.lock();
                             try {
                                 if (logger.isLoggable(Level.WARNING)) {
-                                    final Long expected = currentDataStat.getMtime() +
-                                                          TimeUnit.SECONDS.toMillis(commitDelayTimeInSecs);
+                                    final Long expected = currentDataStat.getMtime() + TimeUnit.SECONDS.toMillis(commitDelayTimeInSecs);
                                     final Date expectedDate = new Date(expected);
                                     logger.log(Level.WARNING,
-                                               "commit's schedule has been timed out so synchronization will be rolled back. name={0}, regionName={1}, expectedDate={2}, toBeComplete={3}",
-                                               new Object[]{name, regionName, expectedDate, toBeCompleted});
+                                            "commit's schedule has been timed out so synchronization will be rolled back. name={0}, regionName={1}, expectedDate={2}, toBeComplete={3}",
+                                            new Object[] { name, regionName, expectedDate, toBeCompleted });
                                 }
                                 clearSynchronization();
                                 // delete own barrier path
                                 if (!delete(myParticipantPath, -1)) {
                                     if (logger.isLoggable(Level.FINE)) {
                                         logger.log(Level.FINE,
-                                                   "there is no the participant path to be deleted in rolling back because it may already has been closed. name={0}, regionName={1}, path={2}",
-                                                   new Object[]{name, regionName, myParticipantPath});
+                                                "there is no the participant path to be deleted in rolling back because it may already has been closed. name={0}, regionName={1}, path={2}",
+                                                new Object[] { name, regionName, myParticipantPath });
                                     }
                                 }
                             } finally {
@@ -767,17 +776,15 @@ public class ZKClient {
                 }
                 // register the watcher for detecting next data's changes again
                 exists(currentDataPath, this);
-            } else if (isSynchronizing &&
-                    eventType == Event.EventType.NodeDeleted &&
-                    currentDataPath.equals(eventPath)) { // data deleted
+            } else if (isSynchronizing && eventType == Event.EventType.NodeDeleted && currentDataPath.equals(eventPath)) { // data deleted
                 regionLock.lock();
                 try {
                     if (isSynchronizing) {
                         if (!toBeCompleted.isEmpty()) {
                             if (logger.isLoggable(Level.WARNING)) {
                                 logger.log(Level.WARNING,
-                                           "the central data deleted in the remote zookeeper server while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}, toBeCompleted={3}",
-                                           new Object[]{name, regionName, eventPath, toBeCompleted});
+                                        "the central data deleted in the remote zookeeper server while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}, toBeCompleted={3}",
+                                        new Object[] { name, regionName, eventPath, toBeCompleted });
                             }
                         }
                         clearSynchronization();
@@ -787,29 +794,29 @@ public class ZKClient {
                 }
                 // register the watcher for detecting next data's changes again
                 exists(currentDataPath, this);
-            } else if (isSynchronizing &&
-                    (eventType == Watcher.Event.EventType.NodeCreated || eventType == Watcher.Event.EventType.NodeDeleted) &&
-                    eventPath != null && eventPath.startsWith(currentParticipantPath)) { // a participant joined from (watch2)
+            } else if (isSynchronizing
+                    && (eventType == Watcher.Event.EventType.NodeCreated || eventType == Watcher.Event.EventType.NodeDeleted)
+                    && eventPath != null && eventPath.startsWith(currentParticipantPath)) { // a participant joined from (watch2)
                 regionLock.lock();
                 try {
                     if (isSynchronizing) {
                         toBeCompleted.remove(eventPath);
                         if (toBeCompleted.isEmpty()) {
-                            scheduleCommit(event, currentDataPath, currentParticipantPath, remoteDataBytes,
-                                           remoteDataStat);
+                            scheduleCommit(event, currentDataPath, currentParticipantPath, remoteDataBytes, remoteDataStat);
                             clearSynchronization();
                         }
                     }
                 } finally {
                     regionLock.unlock();
                 }
-            } else if (isSynchronizing &&
-                       eventType == Event.EventType.NodeChildrenChanged &&
-                       currentNodesPath.equals(eventPath)) { // nodes changed from (watch1)
+            } else if (isSynchronizing && eventType == Event.EventType.NodeChildrenChanged && currentNodesPath.equals(eventPath)) { // nodes
+                                                                                                                                    // changed
+                                                                                                                                    // from
+                                                                                                                                    // (watch1)
                 if (logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO,
-                               "some clients are failed or added while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}",
-                               new Object[]{name, regionName, eventPath});
+                            "some clients are failed or added while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}",
+                            new Object[] { name, regionName, eventPath });
                 }
                 // we should watch nodes' changes again(watch1)
                 final List<String> currentNodes = getChildren(currentNodesPath, this);
@@ -823,16 +830,15 @@ public class ZKClient {
                         if (!failureNodes.isEmpty()) {
                             if (logger.isLoggable(Level.WARNING)) {
                                 logger.log(Level.WARNING,
-                                           "some clients are failed while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}, failureNodes={3}",
-                                           new Object[]{name, regionName, eventPath, failureNodes});
+                                        "some clients are failed while preparing to synchronize the data. name={0}, regionName={1}, eventPath={2}, failureNodes={3}",
+                                        new Object[] { name, regionName, eventPath, failureNodes });
                             }
                             for (final String node : failureNodes) {
                                 final String participant = currentParticipantPath + "/" + node;
                                 toBeCompleted.remove(participant);
                             }
                             if (toBeCompleted.isEmpty()) {
-                                scheduleCommit(event, currentDataPath, currentParticipantPath, remoteDataBytes,
-                                               remoteDataStat);
+                                scheduleCommit(event, currentDataPath, currentParticipantPath, remoteDataBytes, remoteDataStat);
                                 clearSynchronization();
                             }
                         }
@@ -844,23 +850,19 @@ public class ZKClient {
                 if (logger.isLoggable(Level.FINE)) {
                     logger.log(Level.FINE,
                             "not interested. name={0}, regionName={1}, eventState={2}, eventType={3}, eventPath={4}, watcher={5}",
-                            new Object[]{name, regionName, eventState, eventType, eventPath, this});
+                            new Object[] { name, regionName, eventState, eventType, eventPath, this });
                 }
             }
         }
 
-        private void scheduleCommit(final WatchedEvent event,
-                                    final String currentDataPath,
-                                    final String currentParticipantPath,
-                                    final byte[] currentDataBytes,
-                                    final Stat currentDataStat) {
+        private void scheduleCommit(final WatchedEvent event, final String currentDataPath, final String currentParticipantPath,
+                final byte[] currentDataBytes, final Stat currentDataStat) {
             if (event == null || currentDataPath == null || currentDataBytes == null || currentDataStat == null) {
                 return;
             }
             if (logger.isLoggable(Level.INFO)) {
-                logger.log(Level.INFO,
-                        "all clients are prepared. name={0}, regionName={1}, commitDelayTimeInSecs={2}",
-                        new Object[]{name, regionName, commitDelayTimeInSecs});
+                logger.log(Level.INFO, "all clients are prepared. name={0}, regionName={1}, commitDelayTimeInSecs={2}",
+                        new Object[] { name, regionName, commitDelayTimeInSecs });
             }
             // all nodes are prepared
             final Long scheduled = currentDataStat.getMtime() + TimeUnit.SECONDS.toMillis(commitDelayTimeInSecs);
@@ -869,15 +871,14 @@ public class ZKClient {
                 if (logger.isLoggable(Level.WARNING)) {
                     logger.log(Level.WARNING,
                             "commitDelayTimeInSecs may be too small. so we will commit immediately. name={0}, regionName={1}, scheduledTime=before {2}ms",
-                            new Object[]{name, regionName, -remaining});
+                            new Object[] { name, regionName, -remaining });
                 }
             } else {
                 final Date scheduledDate = new Date(scheduled);
                 if (logger.isLoggable(Level.INFO)) {
                     logger.log(Level.INFO,
-                               "the changes of the central data will be applied. name={0}, regionName={1}, scheduledDate={2}, data={3}, dataStat={4}",
-                               new Object[]{name, regionName, scheduledDate.toString(), currentDataBytes,
-                                            currentDataStat});
+                            "the changes of the central data will be applied. name={0}, regionName={1}, scheduledDate={2}, data={3}, dataStat={4}",
+                            new Object[] { name, regionName, scheduledDate.toString(), currentDataBytes, currentDataStat });
                 }
             }
             scheduledExecutor.schedule(new Runnable() {
@@ -888,27 +889,24 @@ public class ZKClient {
                         if (logger.isLoggable(Level.INFO)) {
                             logger.log(Level.INFO,
                                     "this commit will be ignored because this region already has unregistered. eventState={0}, eventType={1}, eventPath={2}, watcher={3}",
-                                    new Object[]{event.getState(), event.getType(), event.getPath(), this});
+                                    new Object[] { event.getState(), event.getType(), event.getPath(), this });
                         }
                         return;
                     }
                     try {
                         if (logger.isLoggable(Level.FINE)) {
-                            logger.log(Level.FINE,
-                                    "name={0}, regionName={1}, scheduledTime={2}ms, commit time={3}ms",
-                                    new Object[]{name, regionName, scheduled, System.currentTimeMillis()});
+                            logger.log(Level.FINE, "name={0}, regionName={1}, scheduledTime={2}ms, commit time={3}ms",
+                                    new Object[] { name, regionName, scheduled, System.currentTimeMillis() });
                         }
                         listener.onCommit(regionName, currentDataPath, currentDataBytes);
                         if (logger.isLoggable(Level.INFO)) {
-                            logger.log(Level.INFO,
-                                    "committed successfully. name={0}, regionName={1}, listener={2}",
-                                    new Object[]{name, regionName, listener});
+                            logger.log(Level.INFO, "committed successfully. name={0}, regionName={1}, listener={2}",
+                                    new Object[] { name, regionName, listener });
                         }
                     } catch (Exception e) {
                         if (logger.isLoggable(Level.WARNING)) {
                             logger.log(Level.WARNING,
-                                    "failed to onCommit. name=" + name + ", regionName=" + regionName + ", listener=" + listener,
-                                    e);
+                                    "failed to onCommit. name=" + name + ", regionName=" + regionName + ", listener=" + listener, e);
                         }
                     }
                     // delete own barrier path
@@ -917,7 +915,7 @@ public class ZKClient {
                         if (logger.isLoggable(Level.FINE)) {
                             logger.log(Level.FINE,
                                     "there is no the participant path to be deleted because it may already has been closed. name={0}, regionName={1}, path={2}",
-                                    new Object[]{name, regionName, path});
+                                    new Object[] { name, regionName, path });
                         }
                     }
                 }
@@ -941,9 +939,7 @@ public class ZKClient {
 
         @Override
         public String toString() {
-            return "RegionWatcher{" +
-                    "regionName='" + regionName + '\'' +
-                    '}';
+            return "RegionWatcher{" + "regionName='" + regionName + '\'' + '}';
         }
     }
 
@@ -981,21 +977,11 @@ public class ZKClient {
 
     @Override
     public String toString() {
-        return "ZKClient{" +
-                "connected=" + connected +
-                ", running=" + running +
-                ", currentState=" + currentState +
-                ", listenerMap=" + listenerMap +
-                ", name='" + name + '\'' +
-                ", uniqueId='" + uniqueId + '\'' +
-                ", uniqueIdPath='" + uniqueIdPath + '\'' +
-                ", rootPath='" + rootPath + '\'' +
-                ", basePath='" + basePath + '\'' +
-                ", zooKeeperServerList='" + zooKeeperServerList + '\'' +
-                ", connectTimeoutInMillis=" + connectTimeoutInMillis +
-                ", sessionTimeoutInMillis=" + sessionTimeoutInMillis +
-                ", commitDelayTimeInSecs=" + commitDelayTimeInSecs +
-                '}';
+        return "ZKClient{" + "connected=" + connected + ", running=" + running + ", currentState=" + currentState + ", listenerMap="
+                + listenerMap + ", name='" + name + '\'' + ", uniqueId='" + uniqueId + '\'' + ", uniqueIdPath='" + uniqueIdPath + '\''
+                + ", rootPath='" + rootPath + '\'' + ", basePath='" + basePath + '\'' + ", zooKeeperServerList='" + zooKeeperServerList
+                + '\'' + ", connectTimeoutInMillis=" + connectTimeoutInMillis + ", sessionTimeoutInMillis=" + sessionTimeoutInMillis
+                + ", commitDelayTimeInSecs=" + commitDelayTimeInSecs + '}';
     }
 
     /**
@@ -1040,9 +1026,10 @@ public class ZKClient {
         /**
          * The specific name or Id for ZKClient
          *
-         * @param name                name or id
-         * @param zooKeeperServerList comma separated host:port pairs, each corresponding to a zookeeper server.
-         *                            e.g. "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
+         * @param name name or id
+         * @param zooKeeperServerList comma separated host:port pairs, each
+         * corresponding to a zookeeper server. e.g.
+         * "127.0.0.1:3000,127.0.0.1:3001,127.0.0.1:3002"
          */
         public Builder(final String name, final String zooKeeperServerList) {
             this.name = name;
@@ -1063,7 +1050,8 @@ public class ZKClient {
         /**
          * Connect timeout in milli-seconds
          *
-         * @param connectTimeoutInMillis connect timeout. negative value means "never timed out". default is 5000(5 secs).
+         * @param connectTimeoutInMillis connect timeout. negative value means "never
+         * timed out". default is 5000(5 secs).
          * @return this builder
          */
         public Builder connectTimeoutInMillis(final long connectTimeoutInMillis) {
@@ -1074,7 +1062,8 @@ public class ZKClient {
         /**
          * Session timeout in milli-seconds
          *
-         * @param sessionTimeoutInMillis Zookeeper connection's timeout. default is 30000(30 secs).
+         * @param sessionTimeoutInMillis Zookeeper connection's timeout. default is
+         * 30000(30 secs).
          * @return this builder
          */
         public Builder sessionTimeoutInMillis(final long sessionTimeoutInMillis) {
@@ -1085,7 +1074,8 @@ public class ZKClient {
         /**
          * Delay time in seconds for committing
          *
-         * @param commitDelayTimeInSecs delay time before committing. default is 60(60secs).
+         * @param commitDelayTimeInSecs delay time before committing. default is
+         * 60(60secs).
          * @return this builder
          */
         public Builder commitDelayTimeInSecs(final long commitDelayTimeInSecs) {

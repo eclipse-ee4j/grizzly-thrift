@@ -16,16 +16,6 @@
 
 package org.glassfish.grizzly.thrift;
 
-import org.apache.thrift.transport.TTransportException;
-import org.glassfish.grizzly.Buffer;
-import org.glassfish.grizzly.Connection;
-import org.glassfish.grizzly.Grizzly;
-import org.glassfish.grizzly.GrizzlyFuture;
-import org.glassfish.grizzly.attributes.Attribute;
-import org.glassfish.grizzly.memory.MemoryManager;
-import org.glassfish.grizzly.thrift.client.GrizzlyThriftClient;
-import org.glassfish.grizzly.utils.BufferOutputStream;
-
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
@@ -34,14 +24,25 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.thrift.transport.TTransportException;
+import org.glassfish.grizzly.Buffer;
+import org.glassfish.grizzly.Connection;
+import org.glassfish.grizzly.Grizzly;
+import org.glassfish.grizzly.GrizzlyFuture;
 import org.glassfish.grizzly.Processor;
+import org.glassfish.grizzly.attributes.Attribute;
 import org.glassfish.grizzly.filterchain.FilterChain;
+import org.glassfish.grizzly.memory.MemoryManager;
+import org.glassfish.grizzly.thrift.client.GrizzlyThriftClient;
+import org.glassfish.grizzly.utils.BufferOutputStream;
 
 /**
  * TGrizzlyClientTransport is the client-side TTransport.
  * <p>
- * BlockingQueue which belongs to ThriftClientFilter has input messages when server's response are arrived.
- * Only TTransport#flush() will be called, output messages will be written. Before flush(), output messages will be stored in buffer.
+ * BlockingQueue which belongs to ThriftClientFilter has input messages when
+ * server's response are arrived. Only TTransport#flush() will be called, output
+ * messages will be written. Before flush(), output messages will be stored in
+ * buffer.
  *
  * @author Bongjae Chang
  */
@@ -50,8 +51,15 @@ public class TGrizzlyClientTransport extends AbstractTGrizzlyTransport {
     private static final long DEFAULT_READ_TIMEOUT_MILLIS = -1L; // never timed out
     private static final long DEFAULT_WRITE_TIMEOUT_MILLIS = -1L; // never timed out
 
-    private final Attribute<BlockingQueue<Buffer>> inputBuffersQueueAttribute =
-            Grizzly.DEFAULT_ATTRIBUTE_BUILDER.createAttribute(GrizzlyThriftClient.INPUT_BUFFERS_QUEUE_ATTRIBUTE_NAME);
+    private Buffer input = null;
+    private final Connection connection;
+    private final BlockingQueue<Buffer> inputBuffersQueue;
+    private final BufferOutputStream outputStream;
+    private final long readTimeoutMillis;
+    private final long writeTimeoutMillis;
+
+    private final Attribute<BlockingQueue<Buffer>> inputBuffersQueueAttribute = Grizzly.DEFAULT_ATTRIBUTE_BUILDER
+            .createAttribute(GrizzlyThriftClient.INPUT_BUFFERS_QUEUE_ATTRIBUTE_NAME);
 
     private final AtomicBoolean running = new AtomicBoolean();
 
@@ -67,6 +75,7 @@ public class TGrizzlyClientTransport extends AbstractTGrizzlyTransport {
         if (connection == null) {
             throw new IllegalStateException("connection should not be null.");
         }
+
         final Processor processor = connection.getProcessor();
         if (!(processor instanceof FilterChain)) {
             throw new IllegalStateException("connection's processor has to be a FilterChain.");
@@ -76,33 +85,21 @@ public class TGrizzlyClientTransport extends AbstractTGrizzlyTransport {
         if (idx == -1) {
             throw new IllegalStateException("connection has to have ThriftClientFilter in the FilterChain.");
         }
-        final ThriftClientFilter thriftClientFilter =
-                (ThriftClientFilter) connectionFilterChain.get(idx);
+        final ThriftClientFilter thriftClientFilter = (ThriftClientFilter) connectionFilterChain.get(idx);
         if (thriftClientFilter == null) {
             throw new IllegalStateException("thriftClientFilter should not be null.");
         }
         return new TGrizzlyClientTransport(connection, readTimeoutMillis, writeTimeoutMillis);
     }
 
-    private Buffer input = null;
-    private final Connection connection;
-    private final BlockingQueue<Buffer> inputBuffersQueue;
-    private final BufferOutputStream outputStream;
-    private final long readTimeoutMillis;
-    private final long writeTimeoutMillis;
-
-    private TGrizzlyClientTransport(final Connection connection,
-                                    final long readTimeoutMillis,
-                                    final long writeTimeoutMillis) {
+    private TGrizzlyClientTransport(final Connection connection, final long readTimeoutMillis, final long writeTimeoutMillis) {
         this.connection = connection;
         this.inputBuffersQueue = new LinkedTransferQueue<>();
         inputBuffersQueueAttribute.set(connection, this.inputBuffersQueue);
-        this.outputStream = new BufferOutputStream(
-                connection.getTransport().getMemoryManager()) {
+        this.outputStream = new BufferOutputStream(connection.getTransport().getMemoryManager()) {
 
             @Override
-            protected Buffer allocateNewBuffer(
-                    final MemoryManager memoryManager, final int size) {
+            protected Buffer allocateNewBuffer(final MemoryManager memoryManager, final int size) {
                 final Buffer b = memoryManager.allocate(size);
                 b.allowBufferDispose(true);
                 return b;

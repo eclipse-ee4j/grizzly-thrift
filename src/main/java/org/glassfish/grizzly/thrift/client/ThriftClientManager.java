@@ -26,17 +26,20 @@ import org.apache.thrift.TServiceClientFactory;
  */
 public interface ThriftClientManager {
     /**
-     * Creates a new {@link ThriftClientBuilder} for the named thrift client to be managed by this thrift client manager.
+     * Creates a new {@link ThriftClientBuilder} for the named thrift client to be
+     * managed by this thrift client manager.
      * <p>
      * The returned ThriftClientBuilder is associated with this ThriftClientManager.
-     * The ThriftClient will be created, added to this ThriftClientManager and started when
-     * {@link ThriftClientBuilder#build()} is called.
+     * The ThriftClient will be created, added to this ThriftClientManager and
+     * started when {@link ThriftClientBuilder#build()} is called.
      *
-     * @param thriftClientName    the name of the thrift client to build. A thrift client name must consist of at least one non-whitespace character.
+     * @param thriftClientName the name of the thrift client to build. A thrift
+     * client name must consist of at least one non-whitespace character.
      * @param thriftClientFactory thrift client factory
      * @return the ThriftClientBuilder for the named thrift client
      */
-    public <T extends TServiceClient> ThriftClientBuilder createThriftClientBuilder(final String thriftClientName, final TServiceClientFactory<T> thriftClientFactory);
+    <T extends TServiceClient> ThriftClientBuilder createThriftClientBuilder(final String thriftClientName,
+            final TServiceClientFactory<T> thriftClientFactory);
 
     /**
      * Looks up a named thrift client.
@@ -44,18 +47,19 @@ public interface ThriftClientManager {
      * @param thriftClientName the name of the thrift client to look for
      * @return the ThriftClient or null if it does exist
      */
-    public <T extends TServiceClient> ThriftClient<T> getThriftClient(final String thriftClientName);
+    <T extends TServiceClient> ThriftClient<T> getThriftClient(final String thriftClientName);
 
     /**
-     * Remove a thrift client from the ThriftClientManager. The thrift client will be stopped.
+     * Remove a thrift client from the ThriftClientManager. The thrift client will
+     * be stopped.
      *
      * @param thriftClientName the thrift client name
      * @return true if the thrift client was removed
      */
-    public boolean removeThriftClient(final String thriftClientName);
+    boolean removeThriftClient(final String thriftClientName);
 
     /**
      * Shuts down the ThriftClientManager.
      */
-    public void shutdown();
+    void shutdown();
 }

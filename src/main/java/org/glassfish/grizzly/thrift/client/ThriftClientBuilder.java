@@ -28,7 +28,8 @@ public interface ThriftClientBuilder<T extends TServiceClient> {
      * Create an instance of the named {@link ThriftClient}.
      *
      * @return a new instance of the named thrift client
-     * @see ThriftClientManager#createThriftClientBuilder(String, org.apache.thrift.TServiceClientFactory)
+     * @see ThriftClientManager#createThriftClientBuilder(String,
+     * org.apache.thrift.TServiceClientFactory)
      */
-    public ThriftClient<T> build();
+    ThriftClient<T> build();
 }
